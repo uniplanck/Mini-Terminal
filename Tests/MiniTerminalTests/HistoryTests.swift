@@ -55,15 +55,17 @@ final class HistoryTests: XCTestCase {
         let settings = SettingsStore(defaults: defaults)
         settings.language = .ja
 
+        let pasteboard = NSPasteboard(name: NSPasteboard.Name("MiniTerminalTests.Feedback.\(UUID().uuidString)"))
         let model = AppModel(
             settings: settings,
-            historyStore: HistoryStore(defaults: defaults)
+            historyStore: HistoryStore(defaults: defaults),
+            pasteboard: pasteboard
         )
         model.command = "copy me"
         model.copyInput()
 
         XCTAssertEqual(model.copyFeedback, "入力をコピーしました")
-        XCTAssertEqual(NSPasteboard.general.string(forType: .string), "copy me")
+        XCTAssertEqual(pasteboard.string(forType: .string), "copy me")
 
         let cleared = expectation(description: "copy feedback clears")
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.15) {
@@ -94,5 +96,42 @@ final class HistoryTests: XCTestCase {
 
         model.toggleLaunchAutoRun()
         XCTAssertFalse(settings.autoRunAfterPaste)
+    }
+
+    func testHistoryRecallCursorResetsAfterHistoryIsCleared() {
+        let suiteName = "MiniTerminalTests.HistoryClearCursor.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suiteName)!
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+
+        let history = HistoryStore(defaults: defaults)
+        history.add(command: "old command", output: "old result", exitCode: 0, duration: 0.01)
+        let model = AppModel(settings: SettingsStore(defaults: defaults), historyStore: history)
+        model.command = "draft"
+        model.recallPreviousCommand()
+        history.clear()
+        model.recallPreviousCommand()
+
+        XCTAssertEqual(model.command, "draft")
+        model.recallNextCommand()
+        XCTAssertEqual(model.command, "draft")
+    }
+
+    func testHistoryRestoreIsIgnoredWhileCommandIsRunning() {
+        let suiteName = "MiniTerminalTests.HistoryRestoreRunning.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suiteName)!
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+
+        let history = HistoryStore(defaults: defaults)
+        let entry = HistoryEntry(id: UUID(), createdAt: Date(), command: "old", output: "result", exitCode: 0, duration: 0.1)
+        let model = AppModel(settings: SettingsStore(defaults: defaults), historyStore: history)
+        model.command = "current draft"
+        model.output = "current output"
+        model.isRunning = true
+
+        model.restoreHistory(entry)
+
+        XCTAssertEqual(model.command, "current draft")
+        XCTAssertEqual(model.output, "current output")
+        XCTAssertTrue(model.isRunning)
     }
 }

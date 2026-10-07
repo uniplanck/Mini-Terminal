@@ -11,31 +11,39 @@ final class AppModel: ObservableObject {
     @Published var showDangerousAlert = false
     @Published var isHistoryVisible = false
     @Published var copyFeedback: String?
+    private(set) var completedCommand: String?
 
     let settings: SettingsStore
     let historyStore: HistoryStore
 
     private let runner = ShellRunner()
+    private let pasteboard: NSPasteboard
     private var pendingDangerousCommand: String?
     private var historyCursor: Int?
     private var commandBeforeHistoryRecall = ""
     private var copyFeedbackWorkItem: DispatchWorkItem?
+    private var lastResultClipboardChangeCount: Int?
 
     init(
         settings: SettingsStore = SettingsStore(),
-        historyStore: HistoryStore = HistoryStore()
+        historyStore: HistoryStore = HistoryStore(),
+        pasteboard: NSPasteboard = .general
     ) {
         self.settings = settings
         self.historyStore = historyStore
+        self.pasteboard = pasteboard
     }
 
     func prepareForPresentation() {
-        guard settings.pasteClipboardOnOpen,
-              let clipboard = NSPasteboard.general.string(forType: .string),
-              !clipboard.isEmpty else {
+        guard !isRunning, !showDangerousAlert, settings.pasteClipboardOnOpen,
+              let clipboard = pasteboard.string(forType: .string),
+              !clipboard.isEmpty,
+              pasteboard.changeCount != lastResultClipboardChangeCount else {
             return
         }
 
+        resetHistoryCursor()
+        isHistoryVisible = false
         command = clipboard
 
         if settings.autoRunAfterPaste {
@@ -68,6 +76,7 @@ final class AppModel: ObservableObject {
             workingDirectory: settings.workingDirectory
         ) { [weak self] result in
             guard let self else { return }
+            self.completedCommand = candidate
             self.output = result.combinedOutput
             self.duration = result.duration
 
@@ -78,10 +87,10 @@ final class AppModel: ObservableObject {
                 duration: result.duration
             )
 
-            if self.settings.copyOutputAfterRun {
+            if self.settings.copyOutputAfterRun && !result.combinedOutput.isEmpty {
                 self.copyToClipboard(
                     result.combinedOutput,
-                    feedback: self.settings.text(.copyOutputFeedback)
+                    feedback: self.settings.text(.copyOutputFeedback), isResult: true
                 )
             }
 
@@ -108,22 +117,22 @@ final class AppModel: ObservableObject {
     }
 
     func copyOutput() {
-        copyToClipboard(output, feedback: settings.text(.copyOutputFeedback))
+        copyToClipboard(output, feedback: settings.text(.copyOutputFeedback), isResult: true)
     }
 
     func copyInputAndOutput() {
         let combined = """
         INPUT
-        \(command)
+        \(completedCommand ?? command)
 
         OUTPUT
         \(output)
         """
-        copyToClipboard(combined, feedback: settings.text(.copyBothFeedback))
+        copyToClipboard(combined, feedback: settings.text(.copyBothFeedback), isResult: true)
     }
 
     func toggleLaunchAutoRun() {
-        if settings.autoRunAfterPaste {
+        if settings.autoRunAfterPaste && settings.pasteClipboardOnOpen {
             settings.autoRunAfterPaste = false
         } else {
             settings.pasteClipboardOnOpen = true
@@ -132,6 +141,8 @@ final class AppModel: ObservableObject {
     }
 
     func restoreHistory(_ entry: HistoryEntry) {
+        guard !isRunning else { return }
+        completedCommand = entry.command
         command = entry.command
         output = entry.output
         exitCode = entry.exitCode
@@ -142,8 +153,15 @@ final class AppModel: ObservableObject {
     }
 
     func recallPreviousCommand() {
+        guard !isRunning else { return }
         let entries = historyStore.entries
-        guard !entries.isEmpty else { return }
+        guard !entries.isEmpty else {
+            restoreHistoryDraftIfNeeded()
+            return
+        }
+        if let cursor = historyCursor, cursor >= entries.count {
+            restoreHistoryDraftIfNeeded()
+        }
 
         if historyCursor == nil {
             commandBeforeHistoryRecall = command
@@ -158,7 +176,13 @@ final class AppModel: ObservableObject {
     }
 
     func recallNextCommand() {
+        guard !isRunning else { return }
         guard let cursor = historyCursor else { return }
+
+        guard cursor < historyStore.entries.count else {
+            restoreHistoryDraftIfNeeded()
+            return
+        }
 
         if cursor > 0 {
             historyCursor = cursor - 1
@@ -170,9 +194,10 @@ final class AppModel: ObservableObject {
         }
     }
 
-    private func copyToClipboard(_ value: String, feedback: String) {
-        NSPasteboard.general.clearContents()
-        NSPasteboard.general.setString(value, forType: .string)
+    private func copyToClipboard(_ value: String, feedback: String, isResult: Bool = false) {
+        pasteboard.clearContents()
+        guard pasteboard.setString(value, forType: .string) else { return }
+        lastResultClipboardChangeCount = isResult ? pasteboard.changeCount : nil
 
         copyFeedbackWorkItem?.cancel()
         copyFeedback = feedback
@@ -182,5 +207,17 @@ final class AppModel: ObservableObject {
         }
         copyFeedbackWorkItem = workItem
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.0, execute: workItem)
+    }
+
+    private func resetHistoryCursor() {
+        historyCursor = nil
+        commandBeforeHistoryRecall = ""
+    }
+
+    private func restoreHistoryDraftIfNeeded() {
+        if historyCursor != nil {
+            command = commandBeforeHistoryRecall
+        }
+        resetHistoryCursor()
     }
 }

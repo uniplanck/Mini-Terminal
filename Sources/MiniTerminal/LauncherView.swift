@@ -12,336 +12,275 @@ struct LauncherView: View {
     let onOpenSettings: () -> Void
     let onSplitChanged: (Bool) -> Void
     let onExecutionStateChanged: () -> Void
-
     @FocusState private var commandFocused: Bool
+    @State private var confirmsHistoryClear = false
+
+    private var autoRunEnabled: Bool { settings.pasteClipboardOnOpen && settings.autoRunAfterPaste }
 
     var body: some View {
         VStack(spacing: 0) {
             commandBar
-
             if model.isHistoryVisible {
-                Divider()
                 historyContent
-                Divider()
                 historyFooter
-            } else if model.isSplitView {
-                Divider()
-                splitContent
-                Divider()
+            } else {
+                if model.isSplitView { splitContent }
                 statusBar
-            } else if model.isRunning || model.exitCode != nil {
-                compactStatus
             }
         }
-        .frame(minWidth: model.isSplitView ? 900 : 720)
-        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-        .overlay(
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .stroke(Color.primary.opacity(0.10), lineWidth: 1)
-        )
-        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-        .onExitCommand(perform: onClose)
-        .onReceive(NotificationCenter.default.publisher(for: .miniTerminalFocusCommand)) { _ in
-            commandFocused = true
+        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: UIParameters.outerRadius))
+        .clipShape(RoundedRectangle(cornerRadius: UIParameters.outerRadius))
+        .overlay {
+            RoundedRectangle(cornerRadius: UIParameters.outerRadius)
+                .strokeBorder(UIColors.separator.opacity(0.65), lineWidth: 1)
+                .allowsHitTesting(false)
         }
-        .onChange(of: model.isRunning) { _, _ in
+        .onExitCommand {
+            if model.isHistoryVisible {
+                model.isHistoryVisible = false
+                onSplitChanged(model.isSplitView)
+            } else { onClose() }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .miniTerminalFocusCommand)) { _ in commandFocused = true }
+        .onChange(of: model.isRunning) { _, running in
             onExecutionStateChanged()
+            if !running && NSApp.keyWindow is LauncherPanel { commandFocused = true }
         }
-        .onChange(of: model.exitCode) { _, _ in
-            onExecutionStateChanged()
-        }
+        .onChange(of: model.exitCode) { _, _ in onExecutionStateChanged() }
         .alert(settings.text(.executionConfirmTitle), isPresented: $model.showDangerousAlert) {
-            Button(settings.text(.cancel), role: .cancel) {
-                model.cancelDangerousExecution()
-            }
-            Button(settings.text(.run), role: .destructive) {
-                model.confirmDangerousExecution()
-            }
+            Button(settings.text(.cancel), role: .cancel) { model.cancelDangerousExecution() }
+            Button(settings.text(.run), role: .destructive) { model.confirmDangerousExecution() }
         } message: {
-            Text(settings.text(.executionConfirmMessage))
+            Text(settings.text(.executionConfirmMessage) + "\n\n" + model.command)
         }
+        .confirmationDialog(settings.text(.clearHistoryConfirmTitle), isPresented: $confirmsHistoryClear, titleVisibility: .visible) {
+            Button(settings.text(.clearHistory), role: .destructive) { historyStore.clear() }
+            Button(settings.text(.cancel), role: .cancel) {}
+        } message: { Text(settings.text(.clearHistoryConfirmMessage)) }
     }
 
     private var commandBar: some View {
-        HStack(spacing: 12) {
+        HStack(spacing: 8) {
             Image(systemName: "terminal")
-                .font(.system(size: 17, weight: .semibold))
-                .foregroundStyle(.secondary)
-
+                .font(.system(size: 16, weight: .medium))
+                .foregroundStyle(UIColors.muted)
+                .frame(width: 24)
             TextField(settings.text(.shellCommandPlaceholder), text: $model.command)
                 .textFieldStyle(.plain)
-                .font(.system(.body, design: .monospaced))
+                .font(UIParameters.codeFont)
+                .frame(maxWidth: .infinity, minHeight: UIParameters.commandFieldHeight)
                 .focused($commandFocused)
-                .onSubmit {
-                    model.execute()
-                }
-                .onKeyPress(.upArrow) {
-                    model.recallPreviousCommand()
-                    return .handled
-                }
-                .onKeyPress(.downArrow) {
-                    model.recallNextCommand()
-                    return .handled
-                }
+                .disabled(model.isRunning)
+                .accessibilityIdentifier("launcher.command")
+                .accessibilityLabel(settings.text(.inputTitle))
+                .onSubmit { model.execute() }
+                .onKeyPress(.upArrow) { model.recallPreviousCommand(); return .handled }
+                .onKeyPress(.downArrow) { model.recallNextCommand(); return .handled }
 
-            if let feedback = model.copyFeedback {
-                Label(feedback, systemImage: "checkmark")
-                    .font(.caption.weight(.medium))
-                    .foregroundStyle(.secondary)
-                    .lineLimit(1)
-                    .transition(.opacity)
-            }
+            ToolbarButton(systemName: "play.fill", label: settings.text(.run), identifier: "launcher.run",
+                          title: settings.text(.run), primary: true) { model.execute() }
+                .keyboardShortcut(.return, modifiers: .command)
+                .disabled(model.command.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || model.isRunning)
 
-            if model.isRunning {
-                ProgressView()
-                    .controlSize(.small)
-            }
-
-            Button {
-                model.execute()
-            } label: {
-                Image(systemName: "play.fill")
-            }
-            .buttonStyle(.plain)
-            .help(settings.text(.run))
-            .disabled(model.command.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || model.isRunning)
-
-            Button {
-                withAnimation(.easeOut(duration: 0.12)) {
-                    model.isHistoryVisible.toggle()
-                }
+            AccessibleIconButton(systemName: model.isHistoryVisible ? "clock.fill" : "clock",
+                                 label: settings.text(.history), identifier: "launcher.history", selected: model.isHistoryVisible) {
+                model.isHistoryVisible.toggle()
                 onSplitChanged(model.isSplitView)
-            } label: {
-                Image(systemName: model.isHistoryVisible ? "clock.fill" : "clock")
             }
-            .buttonStyle(.plain)
-            .help(settings.text(.history))
-
-            Button {
-                model.toggleLaunchAutoRun()
-            } label: {
-                Image(systemName: settings.autoRunAfterPaste ? "bolt.fill" : "bolt.slash")
-                    .foregroundStyle(settings.autoRunAfterPaste ? Color.accentColor : Color.secondary)
-            }
-            .buttonStyle(.plain)
-            .help(
-                settings.autoRunAfterPaste
-                    ? settings.text(.launchAutoRunOn)
-                    : settings.text(.launchAutoRunOff)
-            )
-
-            Button {
+            AccessibleIconButton(systemName: autoRunEnabled ? "bolt.fill" : "bolt.slash",
+                                 label: settings.text(autoRunEnabled ? .launchAutoRunOn : .launchAutoRunOff),
+                                 identifier: "launcher.autoRun", selected: autoRunEnabled) { model.toggleLaunchAutoRun() }
+                .accessibilityValue(settings.text(autoRunEnabled ? .enabled : .disabled))
+            AccessibleIconButton(systemName: model.isSplitView ? "rectangle.compress.vertical" : "rectangle.split.2x1",
+                                 label: settings.text(model.isSplitView ? .compactView : .splitView),
+                                 identifier: "launcher.splitView", selected: model.isSplitView) {
                 model.isSplitView.toggle()
                 model.isHistoryVisible = false
                 onSplitChanged(model.isSplitView)
-            } label: {
-                Image(systemName: model.isSplitView ? "rectangle.compress.vertical" : "rectangle.split.2x1")
             }
-            .buttonStyle(.plain)
-            .help(model.isSplitView ? settings.text(.compactView) : settings.text(.splitView))
-
-            Button(action: onOpenSettings) {
-                Image(systemName: "gearshape")
-            }
-            .buttonStyle(.plain)
-            .help(settings.text(.settings))
+            AccessibleIconButton(systemName: "gearshape", label: settings.text(.settings), identifier: "launcher.settings", action: onOpenSettings)
         }
-        .padding(.horizontal, 18)
-        .frame(height: 58)
+        .padding(.horizontal, 12)
+        .frame(height: UIParameters.compactCommandHeight)
+        .overlay(alignment: .bottom) { Divider() }
     }
 
     private var historyContent: some View {
         ScrollView {
             LazyVStack(spacing: 0) {
                 if historyStore.entries.isEmpty {
-                    VStack(spacing: 8) {
-                        Image(systemName: "clock")
-                            .font(.title2)
-                            .foregroundStyle(.secondary)
-                        Text(settings.text(.historyEmpty))
-                            .font(.callout)
-                            .foregroundStyle(.secondary)
+                    VStack(spacing: 12) {
+                        Image(systemName: "clock").font(.system(size: 24, weight: .light))
+                        Text(settings.text(.historyEmpty)).font(UIParameters.bodyFont)
                     }
+                    .foregroundStyle(UIColors.muted)
                     .frame(maxWidth: .infinity)
-                    .padding(.vertical, 80)
+                    .padding(.vertical, 64)
                 } else {
                     ForEach(historyStore.entries) { entry in
-                        Button {
+                        HistoryRow(entry: entry, settings: settings, disabled: model.isRunning) {
                             model.restoreHistory(entry)
                             onSplitChanged(model.isSplitView)
-                        } label: {
-                            HStack(spacing: 12) {
-                                Text(entry.createdAt.formatted(date: .omitted, time: .shortened))
-                                    .font(.system(.caption, design: .monospaced))
-                                    .foregroundStyle(.secondary)
-                                    .frame(width: 58, alignment: .leading)
-
-                                Text(entry.command.replacingOccurrences(of: "\n", with: " "))
-                                    .font(.system(.body, design: .monospaced))
-                                    .lineLimit(1)
-                                    .frame(maxWidth: .infinity, alignment: .leading)
-
-                                Text("exit \(entry.exitCode)")
-                                    .font(.system(.caption, design: .monospaced))
-                                    .foregroundStyle(entry.exitCode == 0 ? Color.secondary : Color.red)
-
-                                Text(String(format: "%.0f ms", entry.duration * 1_000))
-                                    .font(.system(.caption, design: .monospaced))
-                                    .foregroundStyle(.secondary)
-                                    .frame(width: 62, alignment: .trailing)
-                            }
-                            .contentShape(Rectangle())
-                            .padding(.horizontal, 16)
-                            .frame(height: 42)
+                            commandFocused = true
                         }
-                        .buttonStyle(.plain)
-
-                        Divider()
-                            .padding(.leading, 16)
                     }
                 }
             }
         }
+        .background(UIColors.surface)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
     private var historyFooter: some View {
-        HStack {
-            Text(settings.historyCount(historyStore.entries.count))
-                .font(.caption)
-                .foregroundStyle(.secondary)
+        HStack(spacing: 12) {
+            Label(settings.historyCount(historyStore.entries.count), systemImage: "clock")
+                .font(UIParameters.detailFont).foregroundStyle(UIColors.muted)
             Spacer()
-            Button(settings.text(.clearHistory), role: .destructive) {
-                historyStore.clear()
-            }
-            .buttonStyle(.borderless)
-            .disabled(historyStore.entries.isEmpty)
+            Button(settings.text(.clearHistory), role: .destructive) { confirmsHistoryClear = true }
+                .buttonStyle(.borderless)
+                .font(UIParameters.labelFont)
+                .frame(minHeight: UIParameters.toolbarTarget)
+                .disabled(historyStore.entries.isEmpty || model.isRunning)
+                .accessibilityIdentifier("history.clear")
         }
-        .padding(.horizontal, 14)
-        .frame(height: 38)
+        .padding(.horizontal, 16)
+        .frame(height: UIParameters.statusHeight)
+        .overlay(alignment: .top) { Divider() }
     }
 
     private var splitContent: some View {
         HStack(spacing: 0) {
-            inputPane
-
-            Divider()
-
-            outputPane
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-    }
-
-    private var inputPane: some View {
-        VStack(spacing: 0) {
-            HStack {
-                Text(settings.text(.inputTitle))
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(.secondary)
-                Spacer()
-                Button(action: model.copyInput) {
-                    Image(systemName: "doc.on.doc")
-                }
-                .buttonStyle(.plain)
-                .help(settings.text(.copyInput))
-            }
-            .padding(.horizontal, 14)
-            .frame(height: 36)
-
-            Divider()
-
-            TextEditor(text: $model.command)
-                .font(.system(.body, design: .monospaced))
-                .scrollContentBackground(.hidden)
-                .padding(8)
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-    }
-
-    private var outputPane: some View {
-        VStack(spacing: 0) {
-            HStack {
-                Text(settings.text(.outputTitle))
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(.secondary)
-                Spacer()
-                Button(action: model.copyOutput) {
-                    Image(systemName: "doc.on.doc")
-                }
-                .buttonStyle(.plain)
-                .help(settings.text(.copyOutput))
-            }
-            .padding(.horizontal, 14)
-            .frame(height: 36)
-
-            Divider()
-
-            ScrollView {
-                Text(model.output.isEmpty ? outputPlaceholder : model.output)
-                    .font(.system(.body, design: .monospaced))
-                    .foregroundStyle(model.output.isEmpty ? .secondary : .primary)
-                    .textSelection(.enabled)
-                    .frame(maxWidth: .infinity, alignment: .topLeading)
+            VStack(spacing: 0) {
+                paneHeader(.inputTitle, copy: .copyInput, identifier: "launcher.copyInput", action: model.copyInput)
+                TextEditor(text: $model.command)
+                    .font(UIParameters.codeFont)
+                    .scrollContentBackground(.hidden)
                     .padding(12)
+                    .disabled(model.isRunning)
+                    .accessibilityLabel(settings.text(.inputTitle))
+                    .accessibilityIdentifier("launcher.multilineCommand")
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            Divider()
+            VStack(spacing: 0) {
+                paneHeader(.outputTitle, copy: .copyOutput, identifier: "launcher.copyOutput", action: model.copyOutput)
+                GeometryReader { geometry in
+                    ScrollView([.vertical, .horizontal]) {
+                        Text(model.output.isEmpty ? outputPlaceholder : model.output)
+                            .font(UIParameters.codeFont)
+                            .foregroundStyle(model.output.isEmpty ? UIColors.muted : Color.primary)
+                            .textSelection(.enabled)
+                            .padding(16)
+                            .frame(minWidth: geometry.size.width, minHeight: geometry.size.height, alignment: .topLeading)
+                            .accessibilityIdentifier("launcher.output")
+                    }
+                }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(UIColors.surface)
     }
 
-    private var compactStatus: some View {
-        HStack(spacing: 10) {
-            statusSummary
+    private func paneHeader(_ title: L10n.Key, copy: L10n.Key, identifier: String, action: @escaping () -> Void) -> some View {
+        HStack(spacing: 8) {
+            Text(settings.text(title)).font(UIParameters.labelFont).foregroundStyle(UIColors.muted)
             Spacer()
-            if !model.output.isEmpty {
-                Text(model.output.replacingOccurrences(of: "\n", with: " "))
-                    .font(.system(.caption, design: .monospaced))
-                    .foregroundStyle(.secondary)
-                    .lineLimit(1)
-
-                Button(action: model.copyOutput) {
-                    Image(systemName: "doc.on.doc")
-                }
-                .buttonStyle(.plain)
-                .help(settings.text(.copyOutput))
-            }
+            AccessibleIconButton(systemName: "doc.on.doc", label: settings.text(copy), identifier: identifier, action: action)
+                .disabled(title == .outputTitle && (model.isRunning || model.exitCode == nil))
         }
-        .padding(.horizontal, 18)
-        .frame(height: 34)
-        .background(Color.primary.opacity(0.035))
+        .padding(.horizontal, 16)
+        .frame(height: UIParameters.paneHeaderHeight)
+        .overlay(alignment: .bottom) { Divider() }
     }
 
     private var statusBar: some View {
-        HStack(spacing: 14) {
-            statusSummary
-            Spacer()
-            Button(settings.text(.copyBoth), action: model.copyInputAndOutput)
-                .buttonStyle(.borderless)
+        HStack(spacing: 12) {
+            statusSummary.fixedSize()
+            if let feedback = model.copyFeedback {
+                Label(feedback, systemImage: "checkmark")
+                    .font(UIParameters.labelFont)
+                    .lineLimit(1)
+                    .frame(maxWidth: .infinity, alignment: .trailing)
+                    .accessibilityIdentifier("launcher.copyFeedback")
+            } else {
+                Label(settings.workingDirectory, systemImage: "folder")
+                    .font(UIParameters.detailFont)
+                    .foregroundStyle(UIColors.muted)
+                    .lineLimit(1).truncationMode(.middle)
+                    .frame(maxWidth: .infinity, alignment: .trailing)
+                    .help(settings.text(.workingDirectory) + ": " + settings.workingDirectory)
+            }
+            Text("⌘↩").font(UIParameters.detailFont).foregroundStyle(UIColors.muted)
+                .help(settings.text(.keyboardRunHint))
+            AccessibleIconButton(systemName: "doc.on.doc", label: settings.text(model.isSplitView ? .copyBoth : .copyOutput),
+                                 identifier: model.isSplitView ? "launcher.copyBoth" : "launcher.copyOutputCompact") {
+                if model.isSplitView { model.copyInputAndOutput() } else { model.copyOutput() }
+            }
+            .disabled(model.isRunning || model.exitCode == nil)
         }
-        .padding(.horizontal, 14)
-        .frame(height: 38)
+        .padding(.horizontal, 16)
+        .frame(height: UIParameters.statusHeight)
+        .overlay(alignment: .top) { Divider() }
     }
 
-    @ViewBuilder
-    private var statusSummary: some View {
+    @ViewBuilder private var statusSummary: some View {
         if model.isRunning {
-            Text(settings.text(.running))
-                .font(.caption)
-                .foregroundStyle(.secondary)
-        } else if let exitCode = model.exitCode {
-            Text("exit \(exitCode)")
-                .font(.system(.caption, design: .monospaced))
-                .foregroundStyle(exitCode == 0 ? Color.secondary : Color.red)
-
+            ProgressView().controlSize(.small).frame(width: 16)
+            Text(settings.text(.running)).font(UIParameters.detailFont).foregroundStyle(UIColors.muted)
+        } else if let code = model.exitCode {
+            Label("exit \(code)", systemImage: code == 0 ? "checkmark.circle" : "exclamationmark.circle.fill")
+                .font(UIParameters.detailFont)
+                .foregroundStyle(code == 0 ? Color.primary : UIColors.error)
+                .accessibilityLabel(settings.text(code == 0 ? .completed : .executionFailed) + ", exit \(code)")
             if let duration = model.duration {
-                Text(String(format: "%.0f ms", duration * 1_000))
-                    .font(.system(.caption, design: .monospaced))
-                    .foregroundStyle(.secondary)
+                Text(String(format: "%.0f ms", duration * 1_000)).font(UIParameters.detailFont).foregroundStyle(UIColors.muted)
             }
+        } else {
+            Label(settings.text(.ready), systemImage: "circle").font(UIParameters.detailFont).foregroundStyle(UIColors.muted)
         }
     }
 
     private var outputPlaceholder: String {
-        model.isRunning ? settings.text(.running) : settings.text(.outputPlaceholder)
+        if model.isRunning { return settings.text(.running) }
+        if let code = model.exitCode { return settings.text(code == 0 ? .completedNoOutput : .executionFailed) }
+        return settings.text(.outputPlaceholder)
+    }
+}
+
+private struct HistoryRow: View {
+    let entry: HistoryEntry
+    let settings: SettingsStore
+    let disabled: Bool
+    let action: () -> Void
+    @State private var hovered = false
+    @FocusState private var focused: Bool
+
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: 12) {
+                Text(entry.createdAt.formatted(.dateTime.month(.abbreviated).day().hour().minute()))
+                    .font(UIParameters.detailFont).foregroundStyle(UIColors.muted).frame(width: 120, alignment: .leading)
+                Text(entry.command.replacingOccurrences(of: "\n", with: " "))
+                    .font(UIParameters.codeFont).frame(maxWidth: .infinity, alignment: .leading)
+                Label("\(entry.exitCode)", systemImage: entry.exitCode == 0 ? "checkmark.circle" : "exclamationmark.circle")
+                    .font(UIParameters.detailFont).foregroundStyle(entry.exitCode == 0 ? UIColors.muted : UIColors.error)
+                Text(String(format: "%.0f ms", entry.duration * 1_000))
+                    .font(UIParameters.detailFont).foregroundStyle(UIColors.muted).frame(width: 64, alignment: .trailing)
+            }
+            .lineLimit(1)
+            .padding(.horizontal, 16)
+            .frame(height: UIParameters.historyRowHeight)
+            .contentShape(Rectangle())
+            .background(hovered && !disabled ? Color.primary.opacity(0.06) : Color.clear)
+            .overlay(alignment: .bottom) { Rectangle().fill(UIColors.separator).frame(height: 0.5).padding(.leading, 16).allowsHitTesting(false) }
+        }
+        .buttonStyle(.plain)
+        .focused($focused)
+        .overlay { RoundedRectangle(cornerRadius: 4).strokeBorder(focused ? UIColors.focus : .clear, lineWidth: 2).allowsHitTesting(false) }
+        .onHover { hovered = $0 }
+        .disabled(disabled)
+        .help(entry.command)
+        .accessibilityLabel(entry.command + ", exit \(entry.exitCode)")
+        .accessibilityIdentifier("history.entry.\(entry.id.uuidString)")
     }
 }

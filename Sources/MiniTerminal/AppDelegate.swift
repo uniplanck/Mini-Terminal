@@ -6,8 +6,16 @@ final class LauncherPanel: NSPanel {
     override var canBecomeMain: Bool { false }
 }
 
-final class AppDelegate: NSObject, NSApplicationDelegate {
-    let model = AppModel()
+final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
+    let model: AppModel
+    let shortcutCapture = ShortcutCaptureController()
+    private let showOnLaunch: Bool
+
+    init(model: AppModel = AppModel(), showOnLaunch: Bool = false) {
+        self.model = model
+        self.showOnLaunch = showOnLaunch
+        super.init()
+    }
 
     private let hotKeyManager = HotKeyManager()
     private var statusItem: NSStatusItem?
@@ -18,7 +26,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         NSApp.setActivationPolicy(.accessory)
 
         model.settings.onShortcutChanged = { [weak self] shortcut in
-            _ = self?.hotKeyManager.register(shortcut)
+            guard let self else { return }
+            if !self.hotKeyManager.register(shortcut),
+               let previous = self.hotKeyManager.registeredShortcut {
+                self.model.settings.shortcut = previous
+            }
         }
 
         model.settings.onLanguageChanged = { [weak self] in
@@ -31,6 +43,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         _ = hotKeyManager.register(model.settings.shortcut)
         configureStatusItem()
+        if showOnLaunch {
+            DispatchQueue.main.async { [weak self] in self?.presentLauncher(prepareClipboard: false) }
+        }
     }
 
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
@@ -46,8 +61,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     @objc private func showLauncher() {
-        model.prepareForPresentation()
+        presentLauncher()
+    }
 
+    @discardableResult
+    func presentLauncher(prepareClipboard: Bool = true) -> NSPanel {
         let panel = launcherPanel ?? makeLauncherPanel()
         launcherPanel = panel
         resizeLauncher(split: model.isSplitView, animated: false)
@@ -56,9 +74,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         NSApp.activate(ignoringOtherApps: true)
         panel.makeKeyAndOrderFront(nil)
 
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.03) {
+        if prepareClipboard {
+            model.prepareForPresentation()
+            resizeLauncher(split: model.isSplitView, animated: false)
+        }
+        DispatchQueue.main.async {
             NotificationCenter.default.post(name: .miniTerminalFocusCommand, object: nil)
         }
+        return panel
     }
 
     private func hideLauncher() {
@@ -66,6 +89,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     @objc private func showSettings() {
+        presentSettingsWindow()
+    }
+
+    @discardableResult
+    func presentSettingsWindow() -> NSWindow {
         hideLauncher()
 
         let window = settingsWindow ?? makeSettingsWindow()
@@ -75,6 +103,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         NSApp.activate(ignoringOtherApps: true)
         window.makeKeyAndOrderFront(nil)
         window.orderFrontRegardless()
+        window.makeKey()
+        return window
     }
 
     @objc private func quitApplication() {
@@ -133,7 +163,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     private func makeLauncherPanel() -> LauncherPanel {
         let panel = LauncherPanel(
-            contentRect: NSRect(x: 0, y: 0, width: 720, height: 92),
+            contentRect: NSRect(x: 0, y: 0, width: UIParameters.compactWidth, height: 96),
             styleMask: [.borderless],
             backing: .buffered,
             defer: false
@@ -143,7 +173,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         panel.backgroundColor = .clear
         panel.hasShadow = true
         panel.level = .floating
-        panel.hidesOnDeactivate = true
+        panel.hidesOnDeactivate = !showOnLaunch
+        panel.title = "Mini-Terminal"
+        panel.isReleasedWhenClosed = false
         panel.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
         panel.isMovableByWindowBackground = true
 
@@ -167,9 +199,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     func makeSettingsWindow() -> NSWindow {
-        let content = SettingsView(settings: model.settings)
+        let content = SettingsView(settings: model.settings, shortcutCapture: shortcutCapture)
         let window = NSWindow(
-            contentRect: NSRect(x: 0, y: 0, width: 560, height: 520),
+            contentRect: NSRect(origin: .zero, size: UIParameters.settingsSize),
             styleMask: [.titled, .closable, .miniaturizable],
             backing: .buffered,
             defer: false
@@ -178,34 +210,35 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         window.title = model.settings.text(.settingsTitle)
         window.contentView = NSHostingView(rootView: content)
         window.isReleasedWhenClosed = false
+        window.delegate = self
         window.level = .floating
         window.collectionBehavior = [.moveToActiveSpace, .fullScreenAuxiliary]
         window.center()
         return window
     }
 
+    func windowWillClose(_ notification: Notification) { shortcutCapture.stop() }
+    func windowDidResignKey(_ notification: Notification) { shortcutCapture.stop() }
+
     private func resizeLauncher(split: Bool, animated: Bool) {
         guard let panel = launcherPanel else { return }
-
-        let targetSize: NSSize
-        if model.isHistoryVisible {
-            targetSize = NSSize(width: 720, height: 430)
-        } else if split {
-            targetSize = NSSize(width: 900, height: 430)
-        } else {
-            targetSize = NSSize(width: 720, height: model.exitCode == nil && !model.isRunning ? 58 : 92)
-        }
-
+        let visible = (panel.screen ?? NSScreen.main)?.visibleFrame
+        let targetSize = UIParameters.launcherSize(split: split, history: model.isHistoryVisible, available: visible?.size)
         var frame = panel.frame
         let top = frame.maxY
+        let center = frame.midX
         frame.size = targetSize
-        frame.origin.y = top - targetSize.height
-
-        if animated {
-            panel.animator().setFrame(frame, display: true)
-        } else {
-            panel.setFrame(frame, display: true)
+        frame.origin = NSPoint(x: center - targetSize.width / 2, y: top - targetSize.height)
+        if let visible {
+            frame.origin.x = max(visible.minX + 16, min(frame.origin.x, visible.maxX - frame.width - 16))
+            frame.origin.y = max(visible.minY + 16, min(frame.origin.y, visible.maxY - frame.height - 16))
         }
+        if animated && !NSWorkspace.shared.accessibilityDisplayShouldReduceMotion {
+            NSAnimationContext.runAnimationGroup { context in
+                context.duration = 0.12
+                panel.animator().setFrame(frame, display: true)
+            }
+        } else { panel.setFrame(frame, display: true) }
     }
 
     private func positionLauncher(_ panel: NSPanel) {
@@ -218,8 +251,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
 
         var frame = panel.frame
+        frame.size = UIParameters.launcherSize(split: model.isSplitView, history: model.isHistoryVisible, available: visibleFrame.size)
         frame.origin.x = visibleFrame.midX - frame.width / 2
-        frame.origin.y = visibleFrame.maxY - frame.height - 110
+        frame.origin.y = max(visibleFrame.minY + 16, visibleFrame.maxY - frame.height - 112)
         panel.setFrame(frame, display: false)
     }
 }
