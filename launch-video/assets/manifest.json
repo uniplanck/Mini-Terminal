@@ -1,0 +1,305 @@
+{
+  "_doc": "Single list of every media asset the film needs. Paths are relative to launch-video/. status: planned | captured | generated | approved | locked. git: tracked | ignored. The AE build script imports any asset whose file exists and inserts a labelled placeholder otherwise.",
+  "updated": "2026-10-08",
+  "assets": [
+    {
+      "id": "UI_T01_summon_run",
+      "source": "ui",
+      "shots": [
+        "S03"
+      ],
+      "path": "assets/ui/stills/film/s03_*.png",
+      "spec": "Retina 2x screen recording, 60fps CFR, ProRes 422 HQ (or HEVC 4:2:2 lossless-ish), dark appearance, system cursor hidden, cropped region ≥ 2400×1000px around panel",
+      "content": "hidden → ⌥Space → type `git rev-parse --short HEAD` → ⌘↩ → exit 0",
+      "status": "rendered-offscreen",
+      "git": "ignored",
+      "note": "2026-10-09: no screen recording (Screen Recording permission not granted to the build session). States rendered from the app's LauncherView by FilmFrameRenderTests with real execution in the film workspace. A live screen-recorded take is still pending for the final."
+    },
+    {
+      "id": "UI_T02_clipboard_flow",
+      "source": "ui",
+      "shots": [
+        "S04",
+        "README_LOOP_6s"
+      ],
+      "path": "assets/ui/stills/film/s04_*.png",
+      "spec": "as UI_T01; clipboard paste+auto-run+copy-output ON; plus alt take ending with Esc dismiss (UI_T02_clipboard_flow_dismiss.mov)",
+      "content": "⚡ON idle → staged copy of `date -u -r 1790000000 '+%Y-%m-%d %H:%M UTC'` (film pasteboard) → ⌥Space → auto paste → auto run → 「出力をコピーしました」",
+      "status": "rendered-offscreen",
+      "git": "ignored",
+      "note": "2026-10-09: no screen recording (Screen Recording permission not granted to the build session). States rendered from the app's LauncherView by FilmFrameRenderTests with real execution in the film workspace. A live screen-recorded take is still pending for the final."
+    },
+    {
+      "id": "UI_T03_split_view",
+      "source": "ui",
+      "shots": [
+        "S05"
+      ],
+      "path": "assets/ui/stills/film/s05_*.png",
+      "spec": "as UI_T01; split 900×480pt",
+      "content": "split button → `wc -l Sources/MiniTerminal/*.swift` in a demo clone → output, exit 0, ms",
+      "status": "rendered-offscreen",
+      "git": "ignored",
+      "note": "2026-10-09: no screen recording (Screen Recording permission not granted to the build session). States rendered from the app's LauncherView by FilmFrameRenderTests with real execution in the film workspace. A live screen-recorded take is still pending for the final."
+    },
+    {
+      "id": "UI_T04_history_safety",
+      "source": "ui",
+      "shots": [
+        "S06",
+        "S07"
+      ],
+      "path": "assets/ui/stills/film/s06_*.png",
+      "spec": "as UI_T01; history pre-seeded with 8–10 fictional entries",
+      "content": "history open + scroll → close → `rm -rf ./build` → 実行確認 alert → キャンセル → compact idle (used frozen in S07)",
+      "status": "rendered-offscreen",
+      "git": "ignored",
+      "note": "2026-10-09: no screen recording (Screen Recording permission not granted to the build session). States rendered from the app's LauncherView by FilmFrameRenderTests with real execution in the film workspace. A live screen-recorded take is still pending for the final."
+    },
+    {
+      "id": "UI_T05_endcard_idle",
+      "source": "ui",
+      "shots": [
+        "S08"
+      ],
+      "path": "assets/ui/stills/film/s08_*.png",
+      "spec": "as UI_T01; 10s static, empty field, caret blinking",
+      "content": "compact idle 待機中",
+      "status": "rendered-offscreen",
+      "git": "ignored",
+      "note": "2026-10-09: no screen recording (Screen Recording permission not granted to the build session). States rendered from the app's LauncherView by FilmFrameRenderTests with real execution in the film workspace. A live screen-recorded take is still pending for the final."
+    },
+    {
+      "id": "UI_STILLS_reference",
+      "source": "ui",
+      "shots": [
+        "all"
+      ],
+      "path": "assets/ui/stills/",
+      "spec": "PNG @2x of each state for AE layout reference / storyboard; may come from NativeRenderingSmokeTests once a Japanese-language variant exists",
+      "status": "planned",
+      "git": "ignored"
+    },
+    {
+      "id": "HF_H1_obsidian_plate",
+      "source": "higgsfield",
+      "shots": [
+        "S01"
+      ],
+      "path": "higgsfield/outputs/HF_H1_obsidian_plate.mp4",
+      "spec": "kling_o3_flf 5s pro from gpt_image_2_5 keyframe; conform to 60fps in AE (Pixel Motion)",
+      "jobs": [
+        "K1a",
+        "K1b",
+        "V1-1",
+        "V1-2"
+      ],
+      "status": "superseded",
+      "git": "ignored",
+      "note": "Replaced by HF_V1_obsidian_plate (the Web-generated V1 take)."
+    },
+    {
+      "id": "HF_H2_keycap_press",
+      "source": "higgsfield",
+      "shots": [],
+      "path": "higgsfield/outputs/phaseB/V2-H2_keycap_press.mp4",
+      "spec": "RETIRED 2026-10-09: unnatural generated fingers, only one key pressed, non-Mac layout (no command between option and space). Replaced by PLATE_H2R_keyrow. No further Higgsfield generation for H2.",
+      "jobs": [
+        "K2a",
+        "K2b",
+        "V2-1",
+        "V2-2"
+      ],
+      "status": "rejected",
+      "git": "ignored"
+    },
+    {
+      "id": "PLATE_H2R_keyrow",
+      "source": "plate",
+      "shots": [
+        "S02"
+      ],
+      "received": "2026-10-09 (1672x941, below the >=2560x1440 minimum)",
+      "path": "assets/plates/H2R/H2R-A_rest.png",
+      "tempPath": "assets/plates/H2R/H2R-TEMP_ref-photo.png",
+      "reference": "assets/plates/H2R/H2R-REF_owner-keyboard.webp",
+      "spec": "Final still made in ChatGPT by the owner (layout/legends must match the owner's keyboard photo: fn/control/option/command/space). >=3840x2160 PNG 16:9, all keys up, no hands. Press animated in AE (PC_H2R_RIG); needs its own mask set in timeline.json S02.press.masks. tempPath = verification stand-in only. See planning/h2-redesign.md",
+      "status": "in-use",
+      "git": "ignored"
+    },
+    {
+      "id": "HF_H3_light_ribbon",
+      "source": "higgsfield",
+      "shots": [
+        "S07"
+      ],
+      "path": "higgsfield/outputs/HF_H3_light_ribbon.mp4",
+      "spec": "as HF_H1; brightest frame used as luma-wipe matte into S08",
+      "jobs": [
+        "K3a",
+        "K3b",
+        "V3-1",
+        "V3-2"
+      ],
+      "status": "not-generated",
+      "git": "ignored",
+      "note": "No Higgsfield video for H3. S07 uses HF_H3A_ribbon_still animated in AE."
+    },
+    {
+      "id": "AE_text_card",
+      "source": "ae",
+      "shots": [
+        "S04"
+      ],
+      "path": "ae/scripts (built procedurally)",
+      "spec": "fictional memo card, 560×280, radius 16, hairline border, JetBrains Mono command line",
+      "status": "built",
+      "git": "tracked"
+    },
+    {
+      "id": "AE_cursor",
+      "source": "ae",
+      "shots": [
+        "S04",
+        "S05",
+        "S06"
+      ],
+      "path": "assets/typography/cursor_arrow.svg (+ cursor_arrow@4x.png raster for AE)",
+      "spec": "original vector arrow cursor (not an Apple asset), 2 states: default / pressed 0.9",
+      "status": "planned",
+      "git": "tracked"
+    },
+    {
+      "id": "AE_keychips",
+      "source": "ae",
+      "shots": [
+        "S02",
+        "S03",
+        "S04"
+      ],
+      "path": "ae/scripts (built procedurally)",
+      "spec": "⌥ Space / ⌘C / ⌘↩ chips, Inter SemiBold 28px, radius 10",
+      "status": "built",
+      "git": "tracked"
+    },
+    {
+      "id": "FONT_NotoSansJP",
+      "source": "font",
+      "shots": [
+        "all"
+      ],
+      "path": "assets/typography/fonts/NotoSansJP",
+      "spec": "OFL. Bold / Medium. Install locally; font files not committed",
+      "status": "installed",
+      "git": "ignored"
+    },
+    {
+      "id": "FONT_Inter",
+      "source": "font",
+      "shots": [
+        "S01",
+        "S02",
+        "S08"
+      ],
+      "path": "assets/typography/fonts/Inter",
+      "spec": "OFL. SemiBold",
+      "status": "missing",
+      "git": "ignored",
+      "note": "Not installed (AE shows a substitute mapped to Osaka). Latin set in Noto Sans JP SemiBold instead."
+    },
+    {
+      "id": "FONT_JetBrainsMono",
+      "source": "font",
+      "shots": [
+        "all"
+      ],
+      "path": "assets/typography/fonts/JetBrainsMono",
+      "spec": "OFL. Regular",
+      "status": "missing",
+      "git": "ignored",
+      "note": "Not installed (checked in AE 26.5, 2026-10-09). Substituted by Source Code Pro (OFL, installed)."
+    },
+    {
+      "id": "AUDIO_music",
+      "source": "audio",
+      "shots": [
+        "all"
+      ],
+      "path": "assets/audio/music/music_120bpm.wav",
+      "spec": "120 BPM, 18.0s edit with button at 15.5s and tail to 18.0s; licensed for web/social. 48kHz/24bit",
+      "status": "planned",
+      "git": "ignored"
+    },
+    {
+      "id": "AUDIO_sfx",
+      "source": "audio",
+      "shots": [
+        "S02",
+        "S03",
+        "S04",
+        "S05",
+        "S06",
+        "S07"
+      ],
+      "path": "assets/audio/sfx/",
+      "spec": "keypress, panel-in, tick (run), copy-confirm, click, alert-low, riser. 48kHz/24bit",
+      "status": "planned",
+      "git": "ignored"
+    },
+    {
+      "id": "AUDIO_vo_standard",
+      "source": "elevenlabs",
+      "shots": [
+        "all"
+      ],
+      "path": "assets/audio/vo/standard/N1.wav … N6.wav",
+      "spec": "per-line generation, 48kHz/24bit. NOT generated — requires owner approval",
+      "status": "planned",
+      "git": "ignored"
+    },
+    {
+      "id": "AUDIO_vo_kansai",
+      "source": "elevenlabs",
+      "shots": [
+        "all"
+      ],
+      "path": "assets/audio/vo/kansai/N1.wav … N6.wav",
+      "spec": "as AUDIO_vo_standard",
+      "status": "planned",
+      "git": "ignored"
+    },
+    {
+      "id": "HF_V1_obsidian_plate",
+      "source": "higgsfield",
+      "shots": [
+        "S01"
+      ],
+      "path": "higgsfield/outputs/phaseB/V1-H1_obsidian_plate.mp4",
+      "spec": "Owner Web-generated Kling take, 1280x720 / 24fps / 5.04s (has an audio track: muted in AE). Uses 1.0–3.0s, scaled 150%, Pixel Motion to 60fps.",
+      "status": "in-use",
+      "git": "ignored"
+    },
+    {
+      "id": "HF_H3A_ribbon_still",
+      "source": "higgsfield",
+      "shots": [
+        "S07"
+      ],
+      "path": "higgsfield/outputs/phaseA/H3-A_ribbon.png",
+      "spec": "Phase A still 1672x941. Light pass, drift and luma wipe built in AE (no video generation).",
+      "status": "in-use",
+      "git": "ignored"
+    },
+    {
+      "id": "AUDIO_temp_mix",
+      "source": "generated-local",
+      "shots": [
+        "all"
+      ],
+      "path": "assets/audio/temp/temp_mix.wav",
+      "spec": "TEMP synth music + SFX from ae/scripts/make-temp-audio.py, timed from timeline.json. Placeholder only.",
+      "status": "temp",
+      "git": "ignored"
+    }
+  ]
+}

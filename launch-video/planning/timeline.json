@@ -1,0 +1,872 @@
+{
+  "film": "Mini-Terminal Launch Film",
+  "version": "v3-build",
+  "width": 1920,
+  "height": 1080,
+  "fps": 60,
+  "duration": 18.0,
+  "bpm": 120,
+  "beatSeconds": 0.5,
+  "colors": {
+    "bg": "#0A0A0B",
+    "ink": "#F5F5F7",
+    "muted": "#8E8E93",
+    "hairline": "#2C2C2E",
+    "accent": "#0A84FF",
+    "success": "#30D158",
+    "danger": "#FF453A"
+  },
+  "fonts": {
+    "jpDisplay": "NotoSansJP-Bold",
+    "jpText": "NotoSansJP-Medium",
+    "latin": "NotoSansJP-SemiBold",
+    "mono": "SourceCodePro-Regular",
+    "uiJp": "HiraginoSans-W4",
+    "_doc": "Checked in AE 26.5 on 2026-10-09: Noto Sans JP installed (variable, all weights). Inter is NOT installed (AE only lists it as a substitute mapped to Osaka) -> Latin uses Noto Sans JP SemiBold. JetBrains Mono is NOT installed -> Source Code Pro (OFL). uiJp = macOS system Japanese face, used only for the reconstructed alert buttons."
+  },
+  "grid": {
+    "columns": 12,
+    "margin": 96,
+    "gutter": 24,
+    "baseline": 8
+  },
+  "shots": [
+    {
+      "id": "S01",
+      "name": "HOOK",
+      "start": 0.0,
+      "end": 2.0,
+      "base": "higgsfield",
+      "asset": "HF_V1_obsidian_plate",
+      "copy": [
+        "Terminalを開くほどでもない。",
+        "その一行のために。"
+      ],
+      "label": "00",
+      "events": {
+        "source": {
+          "file": "higgsfield/outputs/phaseB/V1-H1_obsidian_plate.mp4",
+          "inSec": 1.0,
+          "scale": 150
+        },
+        "push": [
+          100,
+          103
+        ],
+        "line1": {
+          "at": 0.15,
+          "y": 600,
+          "size": 84,
+          "segments": [
+            [
+              "Terminal",
+              "latin"
+            ],
+            [
+              "を",
+              ""
+            ],
+            [
+              "開く",
+              ""
+            ],
+            [
+              "ほど",
+              ""
+            ],
+            [
+              "でも",
+              ""
+            ],
+            [
+              "ない。",
+              ""
+            ]
+          ]
+        },
+        "line2": {
+          "at": 1.0,
+          "y": 700,
+          "size": 56,
+          "segments": [
+            [
+              "その",
+              ""
+            ],
+            [
+              "一行の",
+              ""
+            ],
+            [
+              "ために。",
+              ""
+            ]
+          ]
+        },
+        "x": 96,
+        "stagger": 0.1,
+        "reveal": 0.45,
+        "exit": 1.75
+      }
+    },
+    {
+      "id": "S02",
+      "name": "KEYS",
+      "start": 2.0,
+      "end": 3.5,
+      "base": "plate",
+      "asset": "PLATE_H2R_keyrow",
+      "copy": [
+        "⌥ Space"
+      ],
+      "label": "01 — 呼ぶ",
+      "press": {
+        "_doc": "planning/h2-redesign.md §4-5. Frames are local to S02 at 60fps. option and space share one CTRL_Press slider so they sink on the same frames; command never moves.",
+        "keys": [
+          "option",
+          "space"
+        ],
+        "static": [
+          "fn",
+          "control",
+          "command"
+        ],
+        "startFrame": 53,
+        "impactFrame": 57,
+        "holdUntilCut": true,
+        "capExposureAtBottom": -0.25,
+        "pulse": {
+          "frame": 57,
+          "frames": 3,
+          "exposure": 0.6
+        },
+        "push": {
+          "from": 100,
+          "to": 101.5
+        },
+        "masks": {
+          "_doc": "Mask sets keyed by the imported plate's file name; coordinates are SOURCE-IMAGE px. Each key is a quad [TL, TR, BR, BL] of the keycap outline; BR-BL is the well lip (the cap's lower edge hides below it as it sinks). Add a new entry when the final ChatGPT plate arrives and retrace on it. _placeholder is used when no plate file exists (1920x1080 solid).",
+          "_placeholder": {
+            "travelPx": 6,
+            "radius": 12,
+            "option": [
+              [
+                740,
+                585
+              ],
+              [
+                880,
+                585
+              ],
+              [
+                880,
+                695
+              ],
+              [
+                740,
+                695
+              ]
+            ],
+            "command": [
+              [
+                894,
+                578
+              ],
+              [
+                1084,
+                578
+              ],
+              [
+                1084,
+                688
+              ],
+              [
+                894,
+                688
+              ]
+            ],
+            "space": [
+              [
+                1098,
+                570
+              ],
+              [
+                1920,
+                570
+              ],
+              [
+                1920,
+                682
+              ],
+              [
+                1098,
+                682
+              ]
+            ]
+          },
+          "H2R-A_rest.png": {
+            "_doc": "FINAL plate (ChatGPT, owner-supplied 2026-10-09, 1672x941). Quads trace the whole visible keycap (top face + front skirt); BR-BL is the skirt bottom / well lip. sinkDir leans left because the camera sits low and left of the row.",
+            "travelPx": 10,
+            "radius": 9,
+            "sinkDir": [
+              -0.15,
+              1
+            ],
+            "wellFill": "#07090C",
+            "option": [
+              [
+                700,
+                442
+              ],
+              [
+                912,
+                465
+              ],
+              [
+                887,
+                612
+              ],
+              [
+                657,
+                586
+              ]
+            ],
+            "command": [
+              [
+                944,
+                471
+              ],
+              [
+                1215,
+                504
+              ],
+              [
+                1201,
+                655
+              ],
+              [
+                917,
+                622
+              ]
+            ],
+            "space": [
+              [
+                1246,
+                508
+              ],
+              [
+                1672,
+                556
+              ],
+              [
+                1672,
+                706
+              ],
+              [
+                1234,
+                658
+              ]
+            ]
+          },
+          "H2R-TEMP_ref-photo.png": {
+            "_doc": "TEMP: owner's reference photo (MacBook Air, 2000x1125 crop). For verifying the rig only, never for the final cut.",
+            "travelPx": 8,
+            "radius": 14,
+            "option": [
+              [
+                828,
+                533
+              ],
+              [
+                1039,
+                533
+              ],
+              [
+                1041,
+                708
+              ],
+              [
+                827,
+                708
+              ]
+            ],
+            "command": [
+              [
+                1068,
+                531
+              ],
+              [
+                1349,
+                531
+              ],
+              [
+                1351,
+                706
+              ],
+              [
+                1067,
+                706
+              ]
+            ],
+            "space": [
+              [
+                1360,
+                530
+              ],
+              [
+                2000,
+                526
+              ],
+              [
+                2000,
+                694
+              ],
+              [
+                1358,
+                698
+              ]
+            ]
+          }
+        },
+        "wellFill": "#0B0C0E",
+        "commandSideShadeOpacity": 45
+      },
+      "events": {
+        "chip": {
+          "text": "⌥ Space",
+          "at": 0.25,
+          "x": 96,
+          "y": 904,
+          "sinkPx": 2
+        }
+      }
+    },
+    {
+      "id": "S03",
+      "name": "SUMMON",
+      "start": 3.5,
+      "end": 6.0,
+      "base": "ui",
+      "asset": "UI_T01_summon_run",
+      "copy": [
+        "呼べば、すぐ。"
+      ],
+      "label": "01 — 呼ぶ",
+      "events": {
+        "panel": {
+          "widthPx": 1300,
+          "top": 400
+        },
+        "push": [
+          104,
+          100
+        ],
+        "typeStart": 0.3,
+        "typeFrames": 2,
+        "spaceFrames": 3,
+        "execute": 1.5,
+        "resultDelayMs": "durationMs",
+        "runChip": {
+          "text": "⌘↩",
+          "at": 1.5,
+          "dur": 0.4
+        },
+        "copy": {
+          "x": 96,
+          "y": 760,
+          "size": 72
+        }
+      }
+    },
+    {
+      "id": "S04",
+      "name": "CLIPBOARD",
+      "start": 6.0,
+      "end": 9.5,
+      "base": "ui",
+      "asset": "UI_T02_clipboard_flow",
+      "copy": [
+        "貼る。",
+        "実行。",
+        "コピー。"
+      ],
+      "label": "02 — 完結する",
+      "events": {
+        "panel": {
+          "widthPx": 1300,
+          "top": 400
+        },
+        "card": {
+          "x": -240,
+          "y": 330,
+          "w": 520,
+          "h": 280,
+          "title": "タイムスタンプを日付に",
+          "line": "date -u -r 1790000000 '+%Y-%m-%d %H:%M UTC'",
+          "monoSize": 17
+        },
+        "select": [
+          0.05,
+          0.4
+        ],
+        "chips": [
+          {
+            "text": "⌘C",
+            "at": 0.4,
+            "dur": 0.4
+          },
+          {
+            "text": "⌥ Space",
+            "at": 0.45,
+            "dur": 0.5
+          }
+        ],
+        "summon": 0.5,
+        "pan": [
+          0.45,
+          1.05,
+          320
+        ],
+        "push": [
+          1.05,
+          3.5,
+          100,
+          108
+        ],
+        "cardFade": [
+          0.45,
+          0.75
+        ],
+        "ring": {
+          "rectPx": [
+            968,
+            128,
+            1274,
+            176
+          ],
+          "at": 0.5,
+          "dur": 0.3
+        },
+        "words": {
+          "at": [
+            0.5,
+            1.0,
+            1.5
+          ],
+          "x": 96,
+          "y": 760,
+          "size": 64,
+          "gap": 56
+        }
+      }
+    },
+    {
+      "id": "S05",
+      "name": "SPLIT",
+      "start": 9.5,
+      "end": 12.0,
+      "base": "ui",
+      "asset": "UI_T03_split_view",
+      "copy": [
+        "結果も、終了コードも。"
+      ],
+      "label": "02 — 完結する",
+      "events": {
+        "panel": {
+          "widthPx": 1152,
+          "top": 140
+        },
+        "cursor": {
+          "from": [
+            1180,
+            640
+          ],
+          "t": [
+            0.05,
+            0.38
+          ]
+        },
+        "click": 0.4,
+        "execute": 1.0,
+        "runChip": {
+          "text": "⌘↩",
+          "at": 1.0,
+          "dur": 0.4,
+          "x": 96,
+          "y": 820
+        },
+        "callouts": [
+          {
+            "rectPx": [
+              78,
+              944,
+              166,
+              948
+            ],
+            "at": 1.1
+          },
+          {
+            "rectPx": [
+              192,
+              944,
+              264,
+              948
+            ],
+            "at": 1.25
+          }
+        ],
+        "ring": {
+          "rectPx": [
+            1328,
+            896,
+            1634,
+            944
+          ],
+          "dur": 0.3
+        },
+        "push": [
+          1.1,
+          2.5,
+          100,
+          104
+        ],
+        "pushAnchorPx": [
+          1350,
+          480
+        ],
+        "copy": {
+          "x": 96,
+          "y": 1010,
+          "size": 56
+        },
+        "cursorHideAfterClick": 0.12
+      }
+    },
+    {
+      "id": "S06",
+      "name": "TRUST",
+      "start": 12.0,
+      "end": 14.0,
+      "base": "ui",
+      "asset": "UI_T04_history_safety",
+      "copy": [
+        "履歴100件。",
+        "危ないコマンドは、確認してから。"
+      ],
+      "label": "03 — 任せられる",
+      "events": {
+        "panel": {
+          "widthPx": 1152,
+          "top": 140
+        },
+        "cursor": {
+          "from": [
+            1360,
+            330
+          ],
+          "t": [
+            0.0,
+            0.1
+          ]
+        },
+        "click": 0.12,
+        "track": [
+          0.12,
+          1.0,
+          -24
+        ],
+        "cut": 1.0,
+        "alert": {
+          "text": "s06_alert_window0_text",
+          "pointsSize": [
+            260,
+            193
+          ],
+          "topOffsetPt": 56,
+          "radiusPt": 12,
+          "buttons": [
+            {
+              "label": "キャンセル",
+              "rectPt": [
+                8,
+                149,
+                118,
+                177
+              ],
+              "role": "cancel"
+            },
+            {
+              "label": "実行",
+              "rectPt": [
+                142,
+                149,
+                252,
+                177
+              ],
+              "role": "destructive"
+            }
+          ]
+        },
+        "hover": {
+          "t": [
+            1.35,
+            1.75
+          ],
+          "button": 0
+        },
+        "copy": {
+          "x": 96,
+          "y": 1000,
+          "size": 56,
+          "second": 1.0
+        }
+      }
+    },
+    {
+      "id": "S07",
+      "name": "RIBBON",
+      "start": 14.0,
+      "end": 15.5,
+      "base": "higgsfield",
+      "asset": "HF_H3A_ribbon_still",
+      "copy": [],
+      "label": "",
+      "events": {
+        "source": "higgsfield/outputs/phaseA/H3-A_ribbon.png",
+        "freeze": "s06_after_cancel",
+        "wipeIn": [
+          0.0,
+          0.8
+        ],
+        "drift": [
+          -60,
+          40
+        ],
+        "scale": [
+          104,
+          110
+        ],
+        "uiShrink": [
+          0.0,
+          1.2,
+          100,
+          38
+        ],
+        "uiFade": [
+          0.7,
+          1.15
+        ],
+        "bright": [
+          1.0,
+          1.5,
+          0,
+          1.6
+        ],
+        "lumaWipe": [
+          1.15,
+          1.5
+        ],
+        "lumaInverted": true,
+        "lumaExposure": [
+          5,
+          -6
+        ]
+      }
+    },
+    {
+      "id": "S08",
+      "name": "ENDCARD",
+      "start": 15.5,
+      "end": 18.0,
+      "base": "ui",
+      "asset": "UI_T05_endcard_idle",
+      "copy": [
+        "Mini-Terminal",
+        "一行のための、ターミナル。",
+        "github.com/uniplanck/Mini-Terminal"
+      ],
+      "label": "macOS 14+",
+      "events": {
+        "panel": {
+          "widthPx": 640,
+          "centerX": 1404,
+          "top": 420
+        },
+        "chip": {
+          "text": "⌥ Space",
+          "x": 1084,
+          "y": 560
+        },
+        "wordmark": {
+          "x": 96,
+          "y": 560,
+          "size": 120
+        },
+        "line": {
+          "x": 96,
+          "y": 650,
+          "size": 44
+        },
+        "url": {
+          "rightX": 1824,
+          "y": 1000,
+          "size": 22
+        },
+        "label": {
+          "x": 96,
+          "y": 114
+        },
+        "firstIn": 0.15,
+        "stagger": 0.15,
+        "fadeOut": [
+          2.1,
+          2.5
+        ]
+      }
+    }
+  ],
+  "narration": {
+    "standard": [
+      {
+        "id": "N1",
+        "start": 0.25,
+        "end": 3.2,
+        "text": "ターミナルを開くほどじゃない、その一行のために。"
+      },
+      {
+        "id": "N2",
+        "start": 3.6,
+        "end": 5.6,
+        "text": "オプション・スペースで、すぐ呼び出す。"
+      },
+      {
+        "id": "N3",
+        "start": 6.2,
+        "end": 8.6,
+        "text": "貼って、実行して、結果をコピー。"
+      },
+      {
+        "id": "N4",
+        "start": 9.7,
+        "end": 11.8,
+        "text": "結果も終了コードも、ひと目で。"
+      },
+      {
+        "id": "N5",
+        "start": 12.2,
+        "end": 13.9,
+        "text": "履歴も、安全確認も。"
+      },
+      {
+        "id": "N6",
+        "start": 15.6,
+        "end": 17.7,
+        "text": "Mini-Terminal。一行のための、ターミナル。"
+      }
+    ],
+    "kansai": [
+      {
+        "id": "N1",
+        "start": 0.25,
+        "end": 3.2,
+        "text": "ターミナル開くまでもないやん、その一行。"
+      },
+      {
+        "id": "N2",
+        "start": 3.6,
+        "end": 5.6,
+        "text": "オプション・スペース押したら、すぐや。"
+      },
+      {
+        "id": "N3",
+        "start": 6.2,
+        "end": 8.6,
+        "text": "貼って、実行して、結果コピーや。"
+      },
+      {
+        "id": "N4",
+        "start": 9.7,
+        "end": 11.8,
+        "text": "終了コードも、パッと分かるで。"
+      },
+      {
+        "id": "N5",
+        "start": 12.2,
+        "end": 13.9,
+        "text": "履歴も、安全確認もあるで。"
+      },
+      {
+        "id": "N6",
+        "start": 15.6,
+        "end": 17.7,
+        "text": "Mini-Terminal。一行のための、ターミナルや。"
+      }
+    ]
+  },
+  "loops": [
+    {
+      "id": "README_LOOP_6s",
+      "start": 3.5,
+      "end": 9.5,
+      "textless": true,
+      "note": "S03+S04. Tail uses UI_T02 Esc-dismiss alt so last frame = first frame (empty dark field)."
+    },
+    {
+      "id": "README_LOOP_8_5s",
+      "start": 3.5,
+      "end": 12.0,
+      "textless": true,
+      "note": "S03-S05. Alt, longer loop; same dismiss tail."
+    }
+  ],
+  "audioVersions": [
+    {
+      "id": "NOVO",
+      "default": true,
+      "vo": null,
+      "note": "Music + SFX only. Must stand alone: every narration line has an on-screen equivalent. Used for X autoplay (muted) and README."
+    },
+    {
+      "id": "VO_STANDARD",
+      "default": false,
+      "vo": "standard",
+      "note": "Adds standard VO; music ducks -6 dB under VO (sidechain), picture and copy unchanged."
+    },
+    {
+      "id": "VO_KANSAI",
+      "default": false,
+      "vo": "kansai",
+      "note": "Same as VO_STANDARD with kansai lines."
+    }
+  ],
+  "ui": {
+    "_doc": "UI states rendered by Tests/MiniTerminalTests/FilmFrameRenderTests.swift: the app's own LauncherView driven by film-fixture.json scenes with real command execution. Offscreen render at 2x, not a screen recording (no desktop behind the material, no window shadow, no caret). Accent pinned to macOS default blue for the render process.",
+    "stillsDir": "assets/ui/stills/film",
+    "states": "assets/ui/stills/film/states.json",
+    "pxPerPoint": 2,
+    "cursor": {
+      "file": "assets/typography/cursor_arrow@4x.png",
+      "hotspotPx": [
+        32,
+        24
+      ],
+      "scale": 14
+    }
+  },
+  "audio": {
+    "_doc": "TEMP synth from ae/scripts/make-temp-audio.py (no licensed music/SFX yet). Replace before release.",
+    "temp": "assets/audio/temp/temp_mix.wav"
+  },
+  "wip": {
+    "_doc": "Burned-in PREVIEW notes (layer WIP_NOTES in MAIN, enabled for previews, disable for the final). Marks temporary or reconstructed parts so the preview never reads as finished.",
+    "global": "PREVIEW — 仮BGM/SFX（シンセ）・ナレーションなし",
+    "S01": "V1: Higgsfield 1280×720/24fps → 拡大＋60fps補間",
+    "S02": "H2: 仮採用プレート（1672×941）／押下の隙間・マスク未調整",
+    "S03": "UI: アプリ実ビューのオフスクリーン描画（画面録画ではない）・UI Freeze前／打鍵タイミングは再構成",
+    "S04": "UI: オフスクリーン描画・UI Freeze前／テキストカード・カーソルはAE製",
+    "S05": "UI: オフスクリーン描画・UI Freeze前",
+    "S06": "UI: オフスクリーン描画／確認ダイアログの枠とボタンは再構成（文字は実描画）",
+    "S07": "H3: 静止画からAEで光の動きを生成",
+    "S08": "UI: オフスクリーン描画・UI Freeze前"
+  }
+}

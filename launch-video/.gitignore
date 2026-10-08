@@ -1,0 +1,48 @@
+# Launch film: keep plans, scripts and manifests in git; keep heavy/generated media out.
+
+# Raw UI captures and stills
+assets/ui/captures/
+assets/ui/stills/
+# Fonts are installed locally, never committed
+assets/typography/fonts/
+# Music, SFX, voice-over (licensed / generated)
+assets/audio/**/*.wav
+assets/audio/**/*.aif*
+assets/audio/**/*.mp3
+assets/audio/**/*.m4a
+
+# Higgsfield outputs (images / videos)
+higgsfield/outputs/
+
+# After Effects project, autosave, logs and caches (the project is rebuilt from ae/scripts)
+ae/project/*
+!ae/project/.gitkeep
+*.aep
+*.aet
+*.aes
+Adobe After Effects Auto-Save/
+*Logs/
+*.prproj
+Media Cache/
+Media Cache Files/
+
+# Previews and renders
+preview/*
+!preview/.gitkeep
+renders/*
+!renders/.gitkeep
+
+# Generic media
+*.mov
+*.mp4
+*.mxf
+*.gif
+*.webm
+*.exr
+*.dpx
+
+# Photographed still plates (RAW / 16-bit TIFF)
+assets/plates/
+
+# Archived preview renders / stills / projects (local only)
+archive/

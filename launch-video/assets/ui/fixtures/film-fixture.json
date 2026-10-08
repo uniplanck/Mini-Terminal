@@ -1,0 +1,132 @@
+{
+  "_doc": "Film capture dataset, read by `Mini-Terminal --ui-fixture --film <scene> --film-fixture <this file>` (debug builds only; Sources/MiniTerminal/FilmCapture.swift). Shortcut (⌃⌥⇧Space) and the private pasteboard come from the existing --ui-fixture session. locale/timeZone are applied via launch arguments, not by the app. Values are fictional or produced by make-film-workspace.sh. Dates are ISO 8601 (JST) so history rows render identically on every take.",
+  "version": 1,
+  "environment": {
+    "appearance": "dark",
+    "language": "ja",
+    "locale": "ja_JP",
+    "timeZone": "Asia/Tokyo",
+    "shellPath": "/bin/zsh",
+    "workingDirectory": "/tmp/mini-terminal-film/demo",
+    "workspaceScript": "make-film-workspace.sh",
+    "workspacePinCommit": "cb37de0",
+    "copyOutputAfterRun": true,
+    "confirmDangerousCommands": true
+  },
+  "history": [
+    {
+      "createdAt": "2026-10-08T09:24:00+09:00",
+      "command": "git status --short",
+      "output": "",
+      "exitCode": 0,
+      "duration": 0.018
+    },
+    {
+      "createdAt": "2026-10-08T09:21:00+09:00",
+      "command": "swift test --filter CommandSafetyTests",
+      "output": "Test Suite 'CommandSafetyTests' passed.\n",
+      "exitCode": 0,
+      "duration": 2.412
+    },
+    {
+      "createdAt": "2026-10-08T09:18:00+09:00",
+      "command": "date -u -r 1790000000 '+%Y-%m-%d %H:%M UTC'",
+      "output": "2026-09-21 14:13 UTC\n",
+      "exitCode": 0,
+      "duration": 0.006
+    },
+    {
+      "createdAt": "2026-10-08T09:15:00+09:00",
+      "command": "lsof -i :8080",
+      "output": "",
+      "exitCode": 1,
+      "duration": 0.094
+    },
+    {
+      "createdAt": "2026-10-08T09:12:00+09:00",
+      "command": "git rev-parse --short HEAD",
+      "output": "4cb2e96\n",
+      "exitCode": 0,
+      "duration": 0.011
+    },
+    {
+      "createdAt": "2026-10-08T09:09:00+09:00",
+      "command": "du -sh build",
+      "output": "  0B\tbuild\n",
+      "exitCode": 0,
+      "duration": 0.007
+    },
+    {
+      "createdAt": "2026-10-08T09:06:00+09:00",
+      "command": "sw_vers -productVersion",
+      "output": "26.0\n",
+      "exitCode": 0,
+      "duration": 0.021
+    },
+    {
+      "createdAt": "2026-10-08T09:03:00+09:00",
+      "command": "wc -l README.md",
+      "output": "     144 README.md\n",
+      "exitCode": 0,
+      "duration": 0.004
+    },
+    {
+      "createdAt": "2026-10-08T09:01:00+09:00",
+      "command": "echo $SHELL",
+      "output": "/bin/zsh\n",
+      "exitCode": 0,
+      "duration": 0.003
+    }
+  ],
+  "scenes": {
+    "S03": {
+      "take": "UI_T01_summon_run",
+      "view": "compact",
+      "autoRun": false,
+      "panelVisibleAtLaunch": false,
+      "command": "",
+      "operatorTypes": "git rev-parse --short HEAD",
+      "expectedOutput": "4cb2e96\n",
+      "expectedExit": 0
+    },
+    "S04": {
+      "take": "UI_T02_clipboard_flow",
+      "view": "compact",
+      "autoRun": true,
+      "panelVisibleAtLaunch": false,
+      "stageClipboard": "date -u -r 1790000000 '+%Y-%m-%d %H:%M UTC'",
+      "stageClipboardWhen": "at-launch",
+      "expectedOutput": "2026-09-21 14:13 UTC\n",
+      "expectedExit": 0,
+      "expectedFeedback": "出力をコピーしました"
+    },
+    "S05": {
+      "take": "UI_T03_split_view",
+      "view": "compact",
+      "autoRun": false,
+      "panelVisibleAtLaunch": true,
+      "command": "wc -l Sources/MiniTerminal/*.swift",
+      "operatorAction": "click split button, then ⌘↩",
+      "expectedExit": 0,
+      "expectedOutputLastLine": "    2133 total"
+    },
+    "S06": {
+      "take": "UI_T04_history_safety",
+      "view": "compact",
+      "autoRun": false,
+      "panelVisibleAtLaunch": true,
+      "seedHistory": true,
+      "command": "",
+      "operatorAction": "click history, scroll, Esc, type `rm -rf ./build`, ⌘↩, alert → キャンセル",
+      "expectedAlertTitle": "実行確認"
+    },
+    "S08": {
+      "take": "UI_T05_endcard_idle",
+      "view": "compact",
+      "autoRun": false,
+      "panelVisibleAtLaunch": true,
+      "command": "",
+      "expectedStatus": "待機中"
+    }
+  }
+}

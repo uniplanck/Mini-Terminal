@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 32 32">
+  <!-- Original vector arrow for the launch film (not a system asset). Hotspot at (4,3). -->
+  <path d="M4 3 L4 25 L9.6 19.6 L13.4 28.2 L17.2 26.6 L13.5 18.2 L21.2 18.2 Z"
+        fill="#F5F5F7" stroke="#0A0A0B" stroke-width="1.4" stroke-linejoin="round"/>
+</svg>
