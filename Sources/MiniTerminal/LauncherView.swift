@@ -12,7 +12,7 @@ struct LauncherView: View {
     let onOpenSettings: () -> Void
     let onSplitChanged: (Bool) -> Void
     let onExecutionStateChanged: () -> Void
-    @FocusState private var commandFocused: Bool
+    @StateObject private var outputScroll = OutputScrollState()
     @State private var confirmsHistoryClear = false
 
     private var autoRunEnabled: Bool { settings.pasteClipboardOnOpen && settings.autoRunAfterPaste }
@@ -35,16 +35,10 @@ struct LauncherView: View {
                 .strokeBorder(UIColors.separator.opacity(0.65), lineWidth: 1)
                 .allowsHitTesting(false)
         }
-        .onExitCommand {
-            if model.isHistoryVisible {
-                model.isHistoryVisible = false
-                onSplitChanged(model.isSplitView)
-            } else { onClose() }
-        }
-        .onReceive(NotificationCenter.default.publisher(for: .miniTerminalFocusCommand)) { _ in commandFocused = true }
+        .onExitCommand(perform: handleEscape)
         .onChange(of: model.isRunning) { _, running in
             onExecutionStateChanged()
-            if !running && NSApp.keyWindow is LauncherPanel { commandFocused = true }
+            if !running && NSApp.keyWindow is LauncherPanel { focusCommand() }
         }
         .onChange(of: model.exitCode) { _, _ in onExecutionStateChanged() }
         .alert(settings.text(.executionConfirmTitle), isPresented: $model.showDangerousAlert) {
@@ -59,23 +53,42 @@ struct LauncherView: View {
         } message: { Text(settings.text(.clearHistoryConfirmMessage)) }
     }
 
+    private func handleEscape() {
+        if model.isHistoryVisible {
+            model.isHistoryVisible = false
+            onSplitChanged(model.isSplitView)
+        } else { onClose() }
+    }
+
+    private func focusCommand() {
+        NotificationCenter.default.post(name: .miniTerminalFocusCommand, object: nil)
+    }
+
     private var commandBar: some View {
         HStack(spacing: 8) {
             Image(systemName: "terminal")
                 .font(.system(size: 16, weight: .medium))
                 .foregroundStyle(UIColors.muted)
                 .frame(width: 24)
-            TextField(settings.text(.shellCommandPlaceholder), text: $model.command)
-                .textFieldStyle(.plain)
-                .font(UIParameters.codeFont)
-                .frame(maxWidth: .infinity, minHeight: UIParameters.commandFieldHeight)
-                .focused($commandFocused)
-                .disabled(model.isRunning)
-                .accessibilityIdentifier("launcher.command")
-                .accessibilityLabel(settings.text(.inputTitle))
-                .onSubmit { model.execute() }
-                .onKeyPress(.upArrow) { model.recallPreviousCommand(); return .handled }
-                .onKeyPress(.downArrow) { model.recallNextCommand(); return .handled }
+            CommandInput(text: $model.command, isEditable: !model.isRunning, actsAsField: true,
+                         takesFocusOnRequest: true, showsScroller: false,
+                         inset: NSSize(width: 0, height: UIParameters.commandFieldInset),
+                         identifier: "launcher.command", label: settings.text(.inputTitle),
+                         onSubmit: { model.execute() },
+                         onHistoryPrevious: model.recallPreviousCommand,
+                         onHistoryNext: model.recallNextCommand,
+                         onEscape: handleEscape)
+                .frame(maxWidth: .infinity)
+                .frame(height: UIParameters.commandFieldHeight)
+                .overlay(alignment: .leading) {
+                    if model.command.isEmpty {
+                        Text(settings.text(.shellCommandPlaceholder))
+                            .font(UIParameters.codeFont)
+                            .foregroundStyle(UIColors.muted)
+                            .allowsHitTesting(false)
+                            .accessibilityHidden(true)
+                    }
+                }
 
             if model.isRunning {
                 ToolbarButton(systemName: "stop.fill", label: settings.text(.keyboardStopHint), identifier: "launcher.stop",
@@ -134,7 +147,7 @@ struct LauncherView: View {
                         HistoryRow(entry: entry, settings: settings, disabled: model.isRunning) {
                             model.restoreHistory(entry)
                             onSplitChanged(model.isSplitView)
-                            commandFocused = true
+                            focusCommand()
                         }
                     }
                 }
@@ -165,39 +178,51 @@ struct LauncherView: View {
         HStack(spacing: 0) {
             VStack(spacing: 0) {
                 paneHeader(.inputTitle, copy: .copyInput, identifier: "launcher.copyInput", action: model.copyInput)
-                TextEditor(text: $model.command)
-                    .font(UIParameters.codeFont)
-                    .scrollContentBackground(.hidden)
-                    .padding(12)
-                    .disabled(model.isRunning)
-                    .accessibilityLabel(settings.text(.inputTitle))
-                    .accessibilityIdentifier("launcher.multilineCommand")
+                CommandInput(text: $model.command, isEditable: !model.isRunning,
+                             identifier: "launcher.multilineCommand", label: settings.text(.inputTitle),
+                             onEscape: handleEscape)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             Divider()
             VStack(spacing: 0) {
                 paneHeader(.outputTitle, copy: .copyOutput, identifier: "launcher.copyOutput", action: model.copyOutput)
-                GeometryReader { geometry in
-                    ScrollView([.vertical, .horizontal]) {
-                        Text(model.output.isEmpty ? outputPlaceholder : model.output)
-                            .font(UIParameters.codeFont)
-                            .foregroundStyle(model.output.isEmpty ? UIColors.muted : Color.primary)
-                            .textSelection(.enabled)
-                            .padding(16)
-                            .frame(minWidth: geometry.size.width, minHeight: geometry.size.height, alignment: .topLeading)
-                            .accessibilityIdentifier("launcher.output")
-                    }
-                }
+                outputText
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .background(UIColors.surface)
     }
 
+    private var outputText: some View {
+        ZStack(alignment: .bottomTrailing) {
+            OutputPane(buffer: model.outputBuffer, wrapsLines: settings.wrapOutputLines, state: outputScroll,
+                       identifier: "launcher.output", label: settings.text(.outputTitle), onEscape: handleEscape)
+            if model.outputBuffer.isEmpty {
+                Text(outputPlaceholder)
+                    .font(UIParameters.codeFont)
+                    .foregroundStyle(UIColors.muted)
+                    .padding(.horizontal, 17).padding(.vertical, 12)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+                    .allowsHitTesting(false)
+            } else if !outputScroll.isFollowing {
+                AccessibleIconButton(systemName: "arrow.down.to.line", label: settings.text(.jumpToLatest),
+                                     identifier: "launcher.jumpToLatest", action: outputScroll.jumpToLatest)
+                    .padding(12)
+            }
+        }
+    }
+
     private func paneHeader(_ title: L10n.Key, copy: L10n.Key, identifier: String, action: @escaping () -> Void) -> some View {
         HStack(spacing: 8) {
             Text(settings.text(title)).font(UIParameters.labelFont).foregroundStyle(UIColors.muted)
             Spacer()
+            if title == .outputTitle {
+                AccessibleIconButton(systemName: "arrow.turn.down.left", label: settings.text(.wrapLines),
+                                     identifier: "launcher.wrapLines", selected: settings.wrapOutputLines) {
+                    settings.wrapOutputLines.toggle()
+                }
+                .accessibilityValue(settings.text(settings.wrapOutputLines ? .enabled : .disabled))
+            }
             AccessibleIconButton(systemName: "doc.on.doc", label: settings.text(copy), identifier: identifier, action: action)
                 .disabled(title == .outputTitle && (model.isRunning || model.exitCode == nil))
         }

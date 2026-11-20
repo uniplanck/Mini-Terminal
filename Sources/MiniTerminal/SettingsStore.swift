@@ -10,6 +10,7 @@ final class SettingsStore: ObservableObject {
         static let shellPath = "shellPath"
         static let workingDirectory = "workingDirectory"
         static let language = "language"
+        static let wrapOutputLines = "wrapOutputLines"
     }
 
     private let defaults: UserDefaults
@@ -49,6 +50,10 @@ final class SettingsStore: ObservableObject {
         didSet { defaults.set(workingDirectory, forKey: Keys.workingDirectory) }
     }
 
+    @Published var wrapOutputLines: Bool {
+        didSet { defaults.set(wrapOutputLines, forKey: Keys.wrapOutputLines) }
+    }
+
     @Published var language: AppLanguage {
         didSet {
             defaults.set(language.rawValue, forKey: Keys.language)
@@ -84,6 +89,7 @@ final class SettingsStore: ObservableObject {
         confirmDangerousCommands = defaults.object(forKey: Keys.confirmDangerousCommands) as? Bool ?? true
         shellPath = defaults.string(forKey: Keys.shellPath) ?? "/bin/zsh"
         workingDirectory = defaults.string(forKey: Keys.workingDirectory) ?? "~"
+        wrapOutputLines = defaults.object(forKey: Keys.wrapOutputLines) as? Bool ?? true
         language = AppLanguage(rawValue: defaults.string(forKey: Keys.language) ?? "") ?? .system
     }
 }

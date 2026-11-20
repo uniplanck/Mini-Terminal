@@ -19,6 +19,10 @@ enum UIParameters {
     static let labelFont = Font.system(size: 13, weight: .medium)
     static let codeFont = Font.system(size: 14, design: .monospaced)
     static let detailFont = Font.system(size: 12, design: .monospaced)
+    static let codeNSFont = NSFont.monospacedSystemFont(ofSize: 14, weight: .regular)
+    static let codeLineHeight = ceil(NSLayoutManager().defaultLineHeight(for: codeNSFont))
+    /// Vertical inset that centres one line of code in the command field.
+    static let commandFieldInset = floor((commandFieldHeight - codeLineHeight) / 2)
 
     static func launcherSize(split: Bool, history: Bool, available: CGSize? = nil) -> CGSize {
         let desired = CGSize(width: split ? splitWidth : compactWidth,
