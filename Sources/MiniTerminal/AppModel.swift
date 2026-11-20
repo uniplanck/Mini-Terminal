@@ -3,7 +3,7 @@ import Foundation
 
 final class AppModel: ObservableObject {
     @Published var command = ""
-    @Published var output = ""
+    @Published private(set) var outputBuffer = OutputBuffer()
     @Published var isRunning = false
     @Published var isSplitView = false
     @Published var exitCode: Int32?
@@ -13,10 +13,16 @@ final class AppModel: ObservableObject {
     @Published var copyFeedback: String?
     private(set) var completedCommand: String?
 
+    var output: String {
+        get { outputBuffer.text }
+        set { outputBuffer = OutputBuffer(text: newValue) }
+    }
+
     let settings: SettingsStore
     let historyStore: HistoryStore
 
     private let runner = ShellRunner()
+    private var execution: ShellExecution?
     private let pasteboard: NSPasteboard
     private var pendingDangerousCommand: String?
     private var historyCursor: Int?
@@ -63,33 +69,36 @@ final class AppModel: ObservableObject {
             return
         }
 
-        output = ""
+        outputBuffer = OutputBuffer()
         exitCode = nil
         duration = nil
         historyCursor = nil
         commandBeforeHistoryRecall = ""
         isRunning = true
 
-        runner.run(
+        execution = runner.run(
             command: candidate,
             shellPath: settings.shellPath,
-            workingDirectory: settings.workingDirectory
+            workingDirectory: settings.workingDirectory,
+            onOutput: { [weak self] text in self?.outputBuffer.append(text) }
         ) { [weak self] result in
             guard let self else { return }
+            self.execution = nil
+            self.outputBuffer.finish()
+            let output = self.outputBuffer.text
             self.completedCommand = candidate
-            self.output = result.combinedOutput
             self.duration = result.duration
 
             self.historyStore.add(
                 command: candidate,
-                output: result.combinedOutput,
+                output: output,
                 exitCode: result.exitCode,
                 duration: result.duration
             )
 
-            if self.settings.copyOutputAfterRun && !result.combinedOutput.isEmpty {
+            if self.settings.copyOutputAfterRun && !output.isEmpty {
                 self.copyToClipboard(
-                    result.combinedOutput,
+                    output,
                     feedback: self.settings.text(.copyOutputFeedback), isResult: true
                 )
             }
