@@ -309,3 +309,37 @@ final class OutputTextTests: XCTestCase {
         XCTAssertTrue(controller.isAtEnd)
     }
 }
+
+final class OutputFloodTests: XCTestCase {
+    /// A flood delivers about 1 MB per tick. The work per tick has to leave the
+    /// main thread free often enough for the stop button to respond.
+    func testRenderingAFloodStaysCheapPerTick() {
+        _ = NSApplication.shared
+        let controller = OutputTextController(identifier: "launcher.output")
+        controller.scrollView.frame = NSRect(x: 0, y: 0, width: 440, height: 400)
+        let window = NSWindow(contentRect: controller.scrollView.frame, styleMask: .borderless, backing: .buffered, defer: false)
+        window.isReleasedWhenClosed = false
+        window.contentView = controller.scrollView
+        defer { window.close() }
+
+        let chunk = String(repeating: "flood line for mini-terminal\n", count: 1_000_000 / 29)
+        var buffer = OutputBuffer()
+        var slowest: TimeInterval = 0
+        var total: TimeInterval = 0
+        let ticks = 30
+        for _ in 0..<ticks {
+            let started = Date()
+            buffer.append(chunk)
+            controller.render(buffer)
+            let elapsed = Date().timeIntervalSince(started)
+            slowest = max(slowest, elapsed)
+            total += elapsed
+        }
+        print(String(format: "FLOOD_TICK_MS mean=%.1f slowest=%.1f", total / Double(ticks) * 1_000, slowest * 1_000))
+
+        XCTAssertTrue(buffer.isTruncated)
+        XCTAssertEqual(controller.textView.string, buffer.text)
+        XCTAssertTrue(controller.isAtEnd)
+        XCTAssertLessThan(total / Double(ticks), 0.1)
+    }
+}

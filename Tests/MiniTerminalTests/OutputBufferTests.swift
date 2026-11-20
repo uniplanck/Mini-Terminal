@@ -57,23 +57,29 @@ final class OutputBufferTests: XCTestCase {
 
     func testKeepsABoundedTailAndReportsTruncation() {
         var buffer = OutputBuffer(limit: 1_000)
-        let firstGeneration = buffer.generation
-        for index in 0..<500 { buffer.append("line \(index)\n") }
+        var everything = ""
+        for index in 0..<500 {
+            buffer.append("line \(index)\n")
+            everything += "line \(index)\n"
+        }
 
         XCTAssertTrue(buffer.isTruncated)
-        XCTAssertNotEqual(buffer.generation, firstGeneration)
+        XCTAssertEqual(buffer.droppedUTF16Count + buffer.committedUTF16Count, everything.utf16.count)
+        XCTAssertTrue(everything.hasSuffix(buffer.text))
         XCTAssertLessThanOrEqual(buffer.text.utf8.count, 1_000)
         XCTAssertTrue(buffer.text.hasSuffix("line 499\n"))
         XCTAssertTrue(buffer.text.hasPrefix("line "), "the tail starts on a line boundary")
         XCTAssertEqual(buffer.committedUTF16Count, buffer.committed.utf16.count)
     }
 
-    func testAppendingWithinTheLimitKeepsTheGeneration() {
+    func testAppendingWithinTheLimitDropsNothing() {
         var buffer = OutputBuffer()
-        let generation = buffer.generation
+        let id = buffer.id
         buffer.append("a\nb\n")
-        XCTAssertEqual(buffer.generation, generation)
+        XCTAssertEqual(buffer.id, id)
+        XCTAssertEqual(buffer.droppedUTF16Count, 0)
         XCTAssertFalse(buffer.isTruncated)
+        XCTAssertNotEqual(OutputBuffer().id, id, "each run gets its own identity")
     }
 
     func testAVeryLongLineWithoutNewlineIsBounded() {

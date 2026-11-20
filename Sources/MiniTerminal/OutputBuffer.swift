@@ -8,14 +8,17 @@ import Foundation
 struct OutputBuffer {
     static let defaultLimit = 2_000_000
 
-    /// Finished lines. Within one `generation` this only grows at the end
-    /// (or loses trailing newlines in `finish`), so a view can append instead of redrawing.
+    /// Identifies one run's output, so a view can tell an update from a replacement.
+    let id = UUID()
+    /// Finished lines. Changes only by growing at the end, by losing whole lines at
+    /// the start (counted in `droppedUTF16Count`), or by losing trailing newlines in
+    /// `finish`, so a view can patch what it shows instead of redrawing it.
     private(set) var committed = ""
     private(set) var committedUTF16Count = 0
     /// The line still being written.
     private(set) var currentLine = ""
-    /// Replaced whenever the start of `committed` changes.
-    private(set) var generation = UUID()
+    /// UTF-16 length of everything dropped from the start of `committed` so far.
+    private(set) var droppedUTF16Count = 0
     /// True once older output has been dropped to stay within the limit.
     private(set) var isTruncated = false
 
@@ -121,13 +124,11 @@ struct OutputBuffer {
         if committed.utf8.count > limit {
             let utf8 = committed.utf8
             let cut = utf8.index(utf8.startIndex, offsetBy: utf8.count - keep)
-            if let newline = utf8[cut...].firstIndex(of: 0x0A) {
-                committed = String(committed[utf8.index(after: newline)...])
-            } else {
-                committed = ""
-            }
-            committedUTF16Count = committed.utf16.count
-            generation = UUID()
+            let newline = utf8[cut...].firstIndex(of: 0x0A)
+            committed = newline.map { String(committed[utf8.index(after: $0)...]) } ?? ""
+            let remaining = committed.utf16.count
+            droppedUTF16Count += committedUTF16Count - remaining
+            committedUTF16Count = remaining
             isTruncated = true
         }
         if currentLine.utf8.count > limit {

@@ -234,7 +234,8 @@ final class OutputTextController: NSObject {
         }
     }
 
-    private var shownGeneration: UUID?
+    private var shownID: UUID?
+    private var shownDroppedCount = 0
     private var shownCommittedCount = 0
     private var shownCurrentLine = ""
     private var isAdjusting = false
@@ -248,6 +249,8 @@ final class OutputTextController: NSObject {
         super.init()
         textView.isEditable = false
         textView.isSelectable = true
+        // Lay out only what is on screen: jumping to the end of long output stays cheap.
+        textView.layoutManager?.allowsNonContiguousLayout = true
         scrollView.contentView.postsBoundsChangedNotifications = true
         scrollView.postsFrameChangedNotifications = true
         NotificationCenter.default.addObserver(self, selector: #selector(clipBoundsChanged),
@@ -258,22 +261,36 @@ final class OutputTextController: NSObject {
 
     func render(_ buffer: OutputBuffer) {
         guard let storage = textView.textStorage else { return }
-        let sameGeneration = buffer.generation == shownGeneration
-        if sameGeneration, buffer.committedUTF16Count == shownCommittedCount, buffer.currentLine == shownCurrentLine {
+        var sameRun = buffer.id == shownID
+        if sameRun, buffer.droppedUTF16Count == shownDroppedCount,
+           buffer.committedUTF16Count == shownCommittedCount, buffer.currentLine == shownCurrentLine {
             return
         }
         // A cleared buffer is a new run: start at the end again.
         if buffer.isEmpty { setFollowing(true) }
 
-        // Everything before `stable` is already on screen and unchanged.
-        let stable = sameGeneration ? min(shownCommittedCount, buffer.committedUTF16Count) : 0
-        let tail = (buffer.committed as NSString).substring(from: stable) + buffer.currentLine
         isAdjusting = true
+        storage.beginEditing()
+        // Lines the buffer dropped from its start leave the screen the same way.
+        let newlyDropped = buffer.droppedUTF16Count - shownDroppedCount
+        if sameRun, newlyDropped > 0 {
+            if newlyDropped < shownCommittedCount {
+                storage.deleteCharacters(in: NSRange(location: 0, length: newlyDropped))
+                shownCommittedCount -= newlyDropped
+            } else {
+                sameRun = false
+            }
+        }
+        // Everything before `stable` is already on screen and unchanged.
+        let stable = sameRun ? min(shownCommittedCount, buffer.committedUTF16Count) : 0
+        let tail = (buffer.committed as NSString).substring(from: stable) + buffer.currentLine
         storage.replaceCharacters(in: NSRange(location: stable, length: storage.length - stable),
                                   with: NSAttributedString(string: tail, attributes: attributes))
+        storage.endEditing()
         isAdjusting = false
 
-        shownGeneration = buffer.generation
+        shownID = buffer.id
+        shownDroppedCount = buffer.droppedUTF16Count
         shownCommittedCount = buffer.committedUTF16Count
         shownCurrentLine = buffer.currentLine
         if isFollowing { scrollToEnd() }

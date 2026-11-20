@@ -183,10 +183,12 @@ final class ShellRunner {
 }
 
 /// Reads the command's output pipe and hands text to the main queue at most
-/// about 30 times a second, so a chatty command cannot flood the UI.
+/// about 30 times a second. When more than `pendingLimit` is waiting for the UI,
+/// reading pauses and the pipe fills, which slows the command down the way a
+/// terminal would instead of flooding the app.
 private final class OutputPump {
     private static let deliveryInterval: TimeInterval = 0.03
-    private static let pendingLimit = 4_000_000
+    private static let pendingLimit = 1_000_000
 
     private let descriptor: Int32
     private let deliver: (String) -> Void
@@ -195,6 +197,7 @@ private final class OutputPump {
     private var readBuffer = [UInt8](repeating: 0, count: 65_536)
     private var decoder = UTF8StreamDecoder()
     private var reachedEnd = false
+    private var isPaused = false
 
     private let lock = NSLock()
     private var pending = ""
@@ -219,7 +222,7 @@ private final class OutputPump {
     /// waited for: the command is over once the shell is.
     func finish(_ completion: @escaping () -> Void) {
         queue.async {
-            self.drain(maximumReads: 256)
+            self.drain(maximumReads: 256, pausesWhenFull: false)
             self.post(self.decoder.finish())
             self.stopReading()
             DispatchQueue.main.async {
@@ -229,12 +232,17 @@ private final class OutputPump {
         }
     }
 
-    private func drain(maximumReads: Int) {
+    private func drain(maximumReads: Int, pausesWhenFull: Bool = true) {
         guard !reachedEnd else { return }
         for _ in 0..<maximumReads {
             let count = read(descriptor, &readBuffer, readBuffer.count)
             if count > 0 {
-                post(decoder.decode(readBuffer[0..<count]))
+                let waiting = post(decoder.decode(readBuffer[0..<count]))
+                if pausesWhenFull, waiting > Self.pendingLimit {
+                    isPaused = true
+                    source.suspend()
+                    return
+                }
             } else if count == 0 {
                 stopReading()
                 return
@@ -247,22 +255,29 @@ private final class OutputPump {
     private func stopReading() {
         guard !reachedEnd else { return }
         reachedEnd = true
+        resumeReading()
         source.cancel()
     }
 
-    private func post(_ text: String) {
-        guard !text.isEmpty else { return }
+    private func resumeReading() {
+        guard isPaused else { return }
+        isPaused = false
+        source.resume()
+    }
+
+    /// Queues text for the main queue and returns how many bytes are now waiting.
+    @discardableResult
+    private func post(_ text: String) -> Int {
         lock.lock()
         defer { lock.unlock() }
+        guard !text.isEmpty else { return pending.utf8.count }
         pending += text
-        if pending.utf8.count > Self.pendingLimit {
-            // The UI is not keeping up; the display keeps a bounded tail anyway.
-            pending = String(decoding: Array(pending.utf8.suffix(Self.pendingLimit / 2)), as: UTF8.self)
+        if !deliveryScheduled {
+            deliveryScheduled = true
+            let wait = max(0, Self.deliveryInterval - Date().timeIntervalSince(lastDelivery))
+            DispatchQueue.main.asyncAfter(deadline: .now() + wait) { self.deliverPending() }
         }
-        guard !deliveryScheduled else { return }
-        deliveryScheduled = true
-        let wait = max(0, Self.deliveryInterval - Date().timeIntervalSince(lastDelivery))
-        DispatchQueue.main.asyncAfter(deadline: .now() + wait) { self.deliverPending() }
+        return pending.utf8.count
     }
 
     private func deliverPending() {
@@ -270,9 +285,12 @@ private final class OutputPump {
         let text = pending
         pending = ""
         deliveryScheduled = false
-        lastDelivery = Date()
         lock.unlock()
         if !text.isEmpty { deliver(text) }
+        lock.lock()
+        lastDelivery = Date()
+        lock.unlock()
+        queue.async { self.resumeReading() }
     }
 }
 
