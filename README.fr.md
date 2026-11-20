@@ -11,6 +11,7 @@ Un lanceur Shell natif et léger pour macOS, destiné aux commandes courtes qui 
 - Panneau flottant de style Spotlight
 - Collage, exécution et copie automatique via le presse-papiers
 - Vue INPUT / OUTPUT
+- Sortie en direct pendant l’exécution ; arrêt par le bouton, `⌃C` ou `⌘.`
 - Historique local jusqu’à 100 commandes et rappel avec ↑ / ↓
 - exit code et durée d’exécution
 - Shell et dossier de travail configurables
@@ -32,4 +33,4 @@ Nécessite macOS 14 ou version ultérieure et Xcode / Swift toolchain.
 
 La détection des commandes à risque est heuristique et ne constitue pas un bac à sable. Vérifiez les commandes provenant d’une source non fiable avant de les exécuter.
 
-Version actuelle : **0.3.0**.
+Version actuelle : **0.5.0**.

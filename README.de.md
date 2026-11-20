@@ -11,6 +11,7 @@ Ein leichter nativer Shell-Launcher für macOS, gedacht für kurze Befehle, für
 - Schwebendes Panel im Spotlight-Stil
 - Optionales Einfügen, Ausführen und Kopieren über die Zwischenablage
 - INPUT / OUTPUT-Ansicht
+- Live-Ausgabe während der Ausführung; Stoppen per Schaltfläche, `⌃C` oder `⌘.`
 - Lokaler Verlauf mit bis zu 100 Einträgen und ↑ / ↓-Abruf
 - exit code und Ausführungsdauer
 - Konfigurierbare Shell und Arbeitsverzeichnis
@@ -32,4 +33,4 @@ Benötigt macOS 14 oder neuer und Xcode / Swift toolchain.
 
 Die Erkennung riskanter Befehle ist heuristisch und keine Sandbox. Prüfen Sie Befehle aus nicht vertrauenswürdigen Quellen vor der Ausführung.
 
-Aktuelle Version: **0.3.0**.
+Aktuelle Version: **0.5.0**.

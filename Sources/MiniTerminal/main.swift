@@ -23,7 +23,7 @@ if fixtureMode {
     let pasteboard = NSPasteboard(name: .init("com.nao.mini-terminal.ui-fixture"))
     pasteboard.clearContents()
     let model = AppModel(settings: settings, historyStore: HistoryStore(defaults: defaults), pasteboard: pasteboard)
-    model.command = "printf 'Mini-Terminal v0.4 ready\\n'"
+    model.command = "printf 'Mini-Terminal v0.5 ready\\n'"
     model.isSplitView = true
     delegate = AppDelegate(model: model, showOnLaunch: true)
     application.appearance = NSAppearance(named: CommandLine.arguments.contains("--dark") ? .darkAqua : .aqua)
