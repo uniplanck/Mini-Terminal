@@ -114,6 +114,12 @@ enum L10n {
         case copyOutput
         case copyBoth
         case running
+        case stop
+        case stopped
+        case keyboardStopHint
+        case wrapLines
+        case jumpToLatest
+        case outputTruncated
         case ready
         case completed
         case executionFailed
@@ -201,6 +207,8 @@ enum L10n {
             .copyOutput: "Copy output",
             .copyBoth: "Copy input + output",
             .running: "Running…",
+            .stop: "Stop", .stopped: "Stopped", .keyboardStopHint: "⌃C or ⌘. to stop",
+            .wrapLines: "Wrap long lines", .jumpToLatest: "Jump to latest output", .outputTruncated: "Earlier output omitted",
             .outputPlaceholder: "Command output appears here",
             .copyInputFeedback: "Input copied",
             .copyOutputFeedback: "Output copied",
@@ -251,6 +259,8 @@ enum L10n {
             .copyOutput: "出力をコピー",
             .copyBoth: "入出力をコピー",
             .running: "実行中…",
+            .stop: "停止", .stopped: "停止しました", .keyboardStopHint: "⌃C または ⌘. で停止",
+            .wrapLines: "長い行を折り返す", .jumpToLatest: "最新の出力へ", .outputTruncated: "古い出力を省略",
             .outputPlaceholder: "実行結果はここに表示されます",
             .copyInputFeedback: "入力をコピーしました",
             .copyOutputFeedback: "出力をコピーしました",
@@ -301,6 +311,8 @@ enum L10n {
             .copyOutput: "复制输出",
             .copyBoth: "复制输入和输出",
             .running: "运行中…",
+            .stop: "停止", .stopped: "已停止", .keyboardStopHint: "⌃C 或 ⌘. 停止",
+            .wrapLines: "长行自动换行", .jumpToLatest: "跳到最新输出", .outputTruncated: "已省略较早的输出",
             .outputPlaceholder: "命令输出将显示在这里",
             .copyInputFeedback: "已复制输入",
             .copyOutputFeedback: "已复制输出",
@@ -351,6 +363,8 @@ enum L10n {
             .copyOutput: "複製輸出",
             .copyBoth: "複製輸入與輸出",
             .running: "執行中…",
+            .stop: "停止", .stopped: "已停止", .keyboardStopHint: "⌃C 或 ⌘. 停止",
+            .wrapLines: "長行自動換行", .jumpToLatest: "跳到最新輸出", .outputTruncated: "已省略較早的輸出",
             .outputPlaceholder: "命令輸出會顯示在這裡",
             .copyInputFeedback: "已複製輸入",
             .copyOutputFeedback: "已複製輸出",
@@ -401,6 +415,8 @@ enum L10n {
             .copyOutput: "출력 복사",
             .copyBoth: "입력 + 출력 복사",
             .running: "실행 중…",
+            .stop: "중지", .stopped: "중지됨", .keyboardStopHint: "⌃C 또는 ⌘. 로 중지",
+            .wrapLines: "긴 줄 바꿈", .jumpToLatest: "최신 출력으로 이동", .outputTruncated: "이전 출력 생략됨",
             .outputPlaceholder: "명령 출력이 여기에 표시됩니다",
             .copyInputFeedback: "입력을 복사했습니다",
             .copyOutputFeedback: "출력을 복사했습니다",
@@ -451,6 +467,8 @@ enum L10n {
             .copyOutput: "Copiar salida",
             .copyBoth: "Copiar entrada + salida",
             .running: "Ejecutando…",
+            .stop: "Detener", .stopped: "Detenido", .keyboardStopHint: "⌃C o ⌘. para detener",
+            .wrapLines: "Ajustar líneas largas", .jumpToLatest: "Ir a la salida más reciente", .outputTruncated: "Salida anterior omitida",
             .outputPlaceholder: "La salida del comando aparecerá aquí",
             .copyInputFeedback: "Entrada copiada",
             .copyOutputFeedback: "Salida copiada",
@@ -501,6 +519,8 @@ enum L10n {
             .copyOutput: "Copier la sortie",
             .copyBoth: "Copier entrée + sortie",
             .running: "Exécution…",
+            .stop: "Arrêter", .stopped: "Arrêté", .keyboardStopHint: "⌃C ou ⌘. pour arrêter",
+            .wrapLines: "Renvoyer les lignes longues", .jumpToLatest: "Aller à la dernière sortie", .outputTruncated: "Début de la sortie omis",
             .outputPlaceholder: "La sortie de la commande apparaîtra ici",
             .copyInputFeedback: "Entrée copiée",
             .copyOutputFeedback: "Sortie copiée",
@@ -551,6 +571,8 @@ enum L10n {
             .copyOutput: "Ausgabe kopieren",
             .copyBoth: "Eingabe + Ausgabe kopieren",
             .running: "Wird ausgeführt…",
+            .stop: "Stoppen", .stopped: "Gestoppt", .keyboardStopHint: "⌃C oder ⌘. zum Stoppen",
+            .wrapLines: "Lange Zeilen umbrechen", .jumpToLatest: "Zur neuesten Ausgabe", .outputTruncated: "Ältere Ausgabe ausgelassen",
             .outputPlaceholder: "Die Befehlsausgabe erscheint hier",
             .copyInputFeedback: "Eingabe kopiert",
             .copyOutputFeedback: "Ausgabe kopiert",
@@ -601,6 +623,8 @@ enum L10n {
             .copyOutput: "Copiar saída",
             .copyBoth: "Copiar entrada + saída",
             .running: "Executando…",
+            .stop: "Parar", .stopped: "Interrompido", .keyboardStopHint: "⌃C ou ⌘. para parar",
+            .wrapLines: "Quebrar linhas longas", .jumpToLatest: "Ir para a saída mais recente", .outputTruncated: "Saída anterior omitida",
             .outputPlaceholder: "A saída do comando aparecerá aqui",
             .copyInputFeedback: "Entrada copiada",
             .copyOutputFeedback: "Saída copiada",

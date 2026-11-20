@@ -77,10 +77,23 @@ struct LauncherView: View {
                 .onKeyPress(.upArrow) { model.recallPreviousCommand(); return .handled }
                 .onKeyPress(.downArrow) { model.recallNextCommand(); return .handled }
 
-            ToolbarButton(systemName: "play.fill", label: settings.text(.run), identifier: "launcher.run",
-                          title: settings.text(.run), primary: true) { model.execute() }
-                .keyboardShortcut(.return, modifiers: .command)
-                .disabled(model.command.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || model.isRunning)
+            if model.isRunning {
+                ToolbarButton(systemName: "stop.fill", label: settings.text(.keyboardStopHint), identifier: "launcher.stop",
+                              title: settings.text(.stop)) { model.cancelExecution() }
+                    .keyboardShortcut(".", modifiers: .command)
+                    .background {
+                        // ⌃C stops the command wherever the focus is.
+                        Button("") { model.cancelExecution() }
+                            .keyboardShortcut("c", modifiers: .control)
+                            .opacity(0)
+                            .accessibilityHidden(true)
+                    }
+            } else {
+                ToolbarButton(systemName: "play.fill", label: settings.text(.run), identifier: "launcher.run",
+                              title: settings.text(.run), primary: true) { model.execute() }
+                    .keyboardShortcut(.return, modifiers: .command)
+                    .disabled(model.command.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+            }
 
             AccessibleIconButton(systemName: model.isHistoryVisible ? "clock.fill" : "clock",
                                  label: settings.text(.history), identifier: "launcher.history", selected: model.isHistoryVisible) {
@@ -210,8 +223,8 @@ struct LauncherView: View {
                     .frame(maxWidth: .infinity, alignment: .trailing)
                     .help(settings.text(.workingDirectory) + ": " + settings.workingDirectory)
             }
-            Text("⌘↩").font(UIParameters.detailFont).foregroundStyle(UIColors.muted)
-                .help(settings.text(.keyboardRunHint))
+            Text(model.isRunning ? "⌃C" : "⌘↩").font(UIParameters.detailFont).foregroundStyle(UIColors.muted)
+                .help(settings.text(model.isRunning ? .keyboardStopHint : .keyboardRunHint))
             AccessibleIconButton(systemName: "doc.on.doc", label: settings.text(model.isSplitView ? .copyBoth : .copyOutput),
                                  identifier: model.isSplitView ? "launcher.copyBoth" : "launcher.copyOutputCompact") {
                 if model.isSplitView { model.copyInputAndOutput() } else { model.copyOutput() }
@@ -227,6 +240,17 @@ struct LauncherView: View {
         if model.isRunning {
             ProgressView().controlSize(.small).frame(width: 16)
             Text(settings.text(.running)).font(UIParameters.detailFont).foregroundStyle(UIColors.muted)
+            if let startedAt = model.runStartedAt {
+                Text(startedAt, style: .timer).font(UIParameters.detailFont).monospacedDigit()
+                    .accessibilityIdentifier("launcher.elapsed")
+            }
+        } else if model.wasCancelled, let code = model.exitCode {
+            Label(settings.text(.stopped), systemImage: "stop.circle")
+                .font(UIParameters.detailFont)
+                .accessibilityLabel(settings.text(.stopped) + ", exit \(code)")
+            if let duration = model.duration {
+                Text(String(format: "%.0f ms", duration * 1_000)).font(UIParameters.detailFont).foregroundStyle(UIColors.muted)
+            }
         } else if let code = model.exitCode {
             Label("exit \(code)", systemImage: code == 0 ? "checkmark.circle" : "exclamationmark.circle.fill")
                 .font(UIParameters.detailFont)

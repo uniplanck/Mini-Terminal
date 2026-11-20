@@ -8,6 +8,8 @@ final class AppModel: ObservableObject {
     @Published var isSplitView = false
     @Published var exitCode: Int32?
     @Published var duration: TimeInterval?
+    @Published var wasCancelled = false
+    @Published var runStartedAt: Date?
     @Published var showDangerousAlert = false
     @Published var isHistoryVisible = false
     @Published var copyFeedback: String?
@@ -72,8 +74,10 @@ final class AppModel: ObservableObject {
         outputBuffer = OutputBuffer()
         exitCode = nil
         duration = nil
+        wasCancelled = false
         historyCursor = nil
         commandBeforeHistoryRecall = ""
+        runStartedAt = Date()
         isRunning = true
 
         execution = runner.run(
@@ -88,6 +92,7 @@ final class AppModel: ObservableObject {
             let output = self.outputBuffer.text
             self.completedCommand = candidate
             self.duration = result.duration
+            self.wasCancelled = result.wasCancelled
 
             self.historyStore.add(
                 command: candidate,
@@ -96,7 +101,8 @@ final class AppModel: ObservableObject {
                 duration: result.duration
             )
 
-            if self.settings.copyOutputAfterRun && !output.isEmpty {
+            // A stopped command leaves partial output; do not replace the clipboard with it.
+            if self.settings.copyOutputAfterRun && !output.isEmpty && !result.wasCancelled {
                 self.copyToClipboard(
                     output,
                     feedback: self.settings.text(.copyOutputFeedback), isResult: true
@@ -104,8 +110,18 @@ final class AppModel: ObservableObject {
             }
 
             self.isRunning = false
+            self.runStartedAt = nil
             self.exitCode = result.exitCode
         }
+    }
+
+    /// Stops the running command like ⌃C in a terminal. Calling it again forces the stop.
+    func cancelExecution() {
+        execution?.cancel()
+    }
+
+    func terminateExecution() {
+        execution?.terminate()
     }
 
     func confirmDangerousExecution() {
@@ -156,6 +172,7 @@ final class AppModel: ObservableObject {
         output = entry.output
         exitCode = entry.exitCode
         duration = entry.duration
+        wasCancelled = false
         historyCursor = nil
         commandBeforeHistoryRecall = ""
         isHistoryVisible = false

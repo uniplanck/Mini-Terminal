@@ -107,3 +107,82 @@ final class ShellRunnerTests: XCTestCase {
         XCTAssertEqual(text, "ok\u{FFFD}!")
     }
 }
+
+final class ShellCancellationTests: XCTestCase {
+    private func start(_ command: String, onOutput: @escaping (String) -> Void = { _ in }) -> (ShellExecution, XCTestExpectation, () -> ShellResult?) {
+        let finished = expectation(description: "command ends")
+        var result: ShellResult?
+        let execution = ShellRunner().run(command: command, shellPath: "/bin/zsh", workingDirectory: "/tmp", onOutput: onOutput) {
+            result = $0
+            finished.fulfill()
+        }
+        return (execution, finished, { result })
+    }
+
+    private func isAlive(_ pid: pid_t) -> Bool { kill(pid, 0) == 0 }
+
+    func testCancelStopsARunningCommandPromptly() {
+        let (execution, finished, result) = start("sleep 30")
+        RunLoop.main.run(until: Date().addingTimeInterval(0.2))
+        let cancelledAt = Date()
+        execution.cancel()
+        wait(for: [finished], timeout: 2)
+        XCTAssertLessThan(Date().timeIntervalSince(cancelledAt), 1)
+        XCTAssertEqual(result()?.wasCancelled, true)
+        XCTAssertEqual(result()?.exitCode, 128 + SIGINT)
+    }
+
+    func testCancelStopsEveryProcessInAPipeline() {
+        let reported = expectation(description: "child pids reported")
+        var text = ""
+        var didReport = false
+        let (execution, finished, _) = start("(sleep 30 & echo $!; wait) | cat; sleep 30") { chunk in
+            text += chunk
+            if text.contains("\n") && !didReport { didReport = true; reported.fulfill() }
+        }
+        wait(for: [reported], timeout: 3)
+        let child = pid_t(text.trimmingCharacters(in: .whitespacesAndNewlines))!
+        XCTAssertTrue(isAlive(child))
+
+        execution.cancel()
+        wait(for: [finished], timeout: 3)
+        RunLoop.main.run(until: Date().addingTimeInterval(0.2))
+        XCTAssertFalse(isAlive(child), "the pipeline's background sleep must not outlive the stop request")
+    }
+
+    func testCancelEscalatesWhenTheCommandIgnoresInterrupts() {
+        let (execution, finished, result) = start("trap '' INT TERM; sleep 30")
+        RunLoop.main.run(until: Date().addingTimeInterval(0.3))
+        let cancelledAt = Date()
+        execution.cancel()
+        wait(for: [finished], timeout: 8)
+        XCTAssertGreaterThan(Date().timeIntervalSince(cancelledAt), 3)
+        XCTAssertEqual(result()?.exitCode, 128 + SIGKILL)
+    }
+
+    func testSecondCancelForcesTheStopImmediately() {
+        let (execution, finished, result) = start("trap '' INT TERM; sleep 30")
+        RunLoop.main.run(until: Date().addingTimeInterval(0.3))
+        execution.cancel()
+        execution.cancel()
+        wait(for: [finished], timeout: 1.5)
+        XCTAssertEqual(result()?.exitCode, 128 + SIGKILL)
+    }
+
+    func testTerminateEndsTheCommandForAppQuit() {
+        let (execution, finished, result) = start("sleep 30")
+        RunLoop.main.run(until: Date().addingTimeInterval(0.2))
+        execution.terminate()
+        wait(for: [finished], timeout: 2)
+        XCTAssertEqual(result()?.exitCode, 128 + SIGTERM)
+        XCTAssertEqual(result()?.wasCancelled, true)
+    }
+
+    func testCancelAfterCompletionIsHarmless() {
+        let (execution, finished, result) = start("true")
+        wait(for: [finished], timeout: 3)
+        execution.cancel()
+        XCTAssertEqual(result()?.exitCode, 0)
+        XCTAssertEqual(result()?.wasCancelled, false)
+    }
+}

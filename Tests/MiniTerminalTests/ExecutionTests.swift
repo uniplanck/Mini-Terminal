@@ -58,4 +58,38 @@ final class ExecutionTests: XCTestCase {
             XCTAssertEqual(pasteboard.string(forType: .string), model.output)
         }
     }
+
+    func testStoppedCommandIsRecordedButNotCopied() {
+        withFixture { model, pasteboard in
+            pasteboard.setString("keep me", forType: .string)
+            model.command = "echo partial; sleep 30"
+            model.execute()
+            waitForOutput(model, containing: "partial")
+            XCTAssertNotNil(model.runStartedAt)
+
+            model.cancelExecution()
+            waitForExit(model, timeout: 3)
+            XCTAssertFalse(model.isRunning)
+            XCTAssertTrue(model.wasCancelled)
+            XCTAssertNil(model.runStartedAt)
+            XCTAssertEqual(model.output, "partial")
+            XCTAssertEqual(model.historyStore.entries.first?.command, "echo partial; sleep 30")
+            XCTAssertEqual(pasteboard.string(forType: .string), "keep me")
+
+            model.command = "echo next"
+            model.execute()
+            waitForExit(model)
+            XCTAssertFalse(model.wasCancelled)
+            XCTAssertEqual(pasteboard.string(forType: .string), "next")
+        }
+    }
+
+    func testCancelWithoutARunningCommandDoesNothing() {
+        withFixture { model, _ in
+            model.cancelExecution()
+            model.terminateExecution()
+            XCTAssertFalse(model.isRunning)
+            XCTAssertNil(model.exitCode)
+        }
+    }
 }
