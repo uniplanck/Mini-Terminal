@@ -10,8 +10,7 @@ struct LauncherView: View {
     @ObservedObject var historyStore: HistoryStore
     let onClose: () -> Void
     let onOpenSettings: () -> Void
-    let onSplitChanged: (Bool) -> Void
-    let onExecutionStateChanged: () -> Void
+    let onLayoutChanged: () -> Void
     @StateObject private var outputScroll = OutputScrollState()
     @State private var confirmsHistoryClear = false
 
@@ -24,7 +23,11 @@ struct LauncherView: View {
                 historyContent
                 historyFooter
             } else {
-                if model.isSplitView { splitContent }
+                if model.isSplitView {
+                    splitContent
+                } else if model.showsCompactOutput {
+                    outputText.background(UIColors.surface)
+                }
                 statusBar
             }
         }
@@ -37,10 +40,10 @@ struct LauncherView: View {
         }
         .onExitCommand(perform: handleEscape)
         .onChange(of: model.isRunning) { _, running in
-            onExecutionStateChanged()
             if !running && NSApp.keyWindow is LauncherPanel { focusCommand() }
         }
-        .onChange(of: model.exitCode) { _, _ in onExecutionStateChanged() }
+        .onChange(of: model.showsCompactOutput) { _, _ in onLayoutChanged() }
+        .onChange(of: model.commandFieldHeight) { _, _ in onLayoutChanged() }
         .alert(settings.text(.executionConfirmTitle), isPresented: $model.showDangerousAlert) {
             Button(settings.text(.cancel), role: .cancel) { model.cancelDangerousExecution() }
             Button(settings.text(.run), role: .destructive) { model.confirmDangerousExecution() }
@@ -56,7 +59,7 @@ struct LauncherView: View {
     private func handleEscape() {
         if model.isHistoryVisible {
             model.isHistoryVisible = false
-            onSplitChanged(model.isSplitView)
+            onLayoutChanged()
         } else { onClose() }
     }
 
@@ -65,21 +68,25 @@ struct LauncherView: View {
     }
 
     private var commandBar: some View {
-        HStack(spacing: 8) {
+        // Controls stay on the first line while the field grows downward.
+        HStack(alignment: .top, spacing: 8) {
             Image(systemName: "terminal")
                 .font(.system(size: 16, weight: .medium))
                 .foregroundStyle(UIColors.muted)
-                .frame(width: 24)
+                .frame(width: 24, height: UIParameters.toolbarTarget)
             CommandInput(text: $model.command, isEditable: !model.isRunning, actsAsField: true,
-                         takesFocusOnRequest: true, showsScroller: false,
-                         inset: NSSize(width: 0, height: UIParameters.commandFieldInset),
+                         takesFocusOnRequest: true,
+                         showsScroller: model.commandContentHeight > model.commandFieldHeight && !model.isSplitView,
+                         inset: .zero,
                          identifier: "launcher.command", label: settings.text(.inputTitle),
                          onSubmit: { model.execute() },
                          onHistoryPrevious: model.recallPreviousCommand,
                          onHistoryNext: model.recallNextCommand,
-                         onEscape: handleEscape)
+                         onEscape: handleEscape,
+                         onContentHeightChange: { model.commandContentHeight = $0 })
                 .frame(maxWidth: .infinity)
-                .frame(height: UIParameters.commandFieldHeight)
+                .frame(height: model.commandFieldHeight)
+                .padding(.vertical, (UIParameters.toolbarTarget - UIParameters.codeLineHeight) / 2)
                 .overlay(alignment: .leading) {
                     if model.command.isEmpty {
                         Text(settings.text(.shellCommandPlaceholder))
@@ -111,7 +118,7 @@ struct LauncherView: View {
             AccessibleIconButton(systemName: model.isHistoryVisible ? "clock.fill" : "clock",
                                  label: settings.text(.history), identifier: "launcher.history", selected: model.isHistoryVisible) {
                 model.isHistoryVisible.toggle()
-                onSplitChanged(model.isSplitView)
+                onLayoutChanged()
             }
             AccessibleIconButton(systemName: autoRunEnabled ? "bolt.fill" : "bolt.slash",
                                  label: settings.text(autoRunEnabled ? .launchAutoRunOn : .launchAutoRunOff),
@@ -122,12 +129,12 @@ struct LauncherView: View {
                                  identifier: "launcher.splitView", selected: model.isSplitView) {
                 model.isSplitView.toggle()
                 model.isHistoryVisible = false
-                onSplitChanged(model.isSplitView)
+                onLayoutChanged()
             }
             AccessibleIconButton(systemName: "gearshape", label: settings.text(.settings), identifier: "launcher.settings", action: onOpenSettings)
         }
         .padding(.horizontal, 12)
-        .frame(height: UIParameters.compactCommandHeight)
+        .frame(height: UIParameters.commandBarHeight(fieldHeight: model.commandFieldHeight))
         .overlay(alignment: .bottom) { Divider() }
     }
 
@@ -146,7 +153,7 @@ struct LauncherView: View {
                     ForEach(historyStore.entries) { entry in
                         HistoryRow(entry: entry, settings: settings, disabled: model.isRunning) {
                             model.restoreHistory(entry)
-                            onSplitChanged(model.isSplitView)
+                            onLayoutChanged()
                             focusCommand()
                         }
                     }
@@ -224,7 +231,7 @@ struct LauncherView: View {
                 .accessibilityValue(settings.text(settings.wrapOutputLines ? .enabled : .disabled))
             }
             AccessibleIconButton(systemName: "doc.on.doc", label: settings.text(copy), identifier: identifier, action: action)
-                .disabled(title == .outputTitle && (model.isRunning || model.exitCode == nil))
+                .disabled(title == .outputTitle && model.outputBuffer.isEmpty)
         }
         .padding(.horizontal, 16)
         .frame(height: UIParameters.paneHeaderHeight)
@@ -234,6 +241,12 @@ struct LauncherView: View {
     private var statusBar: some View {
         HStack(spacing: 12) {
             statusSummary.fixedSize()
+            if model.outputBuffer.isTruncated {
+                Label(settings.text(.outputTruncated), systemImage: "scissors")
+                    .font(UIParameters.detailFont).foregroundStyle(UIColors.muted)
+                    .lineLimit(1).fixedSize()
+                    .accessibilityIdentifier("launcher.outputTruncated")
+            }
             if let feedback = model.copyFeedback {
                 Label(feedback, systemImage: "checkmark")
                     .font(UIParameters.labelFont)
@@ -254,7 +267,7 @@ struct LauncherView: View {
                                  identifier: model.isSplitView ? "launcher.copyBoth" : "launcher.copyOutputCompact") {
                 if model.isSplitView { model.copyInputAndOutput() } else { model.copyOutput() }
             }
-            .disabled(model.isRunning || model.exitCode == nil)
+            .disabled(model.outputBuffer.isEmpty)
         }
         .padding(.horizontal, 16)
         .frame(height: UIParameters.statusHeight)
@@ -274,7 +287,7 @@ struct LauncherView: View {
                 .font(UIParameters.detailFont)
                 .accessibilityLabel(settings.text(.stopped) + ", exit \(code)")
             if let duration = model.duration {
-                Text(String(format: "%.0f ms", duration * 1_000)).font(UIParameters.detailFont).foregroundStyle(UIColors.muted)
+                Text(DurationFormat.string(duration)).font(UIParameters.detailFont).foregroundStyle(UIColors.muted)
             }
         } else if let code = model.exitCode {
             Label("exit \(code)", systemImage: code == 0 ? "checkmark.circle" : "exclamationmark.circle.fill")
@@ -282,7 +295,7 @@ struct LauncherView: View {
                 .foregroundStyle(code == 0 ? Color.primary : UIColors.error)
                 .accessibilityLabel(settings.text(code == 0 ? .completed : .executionFailed) + ", exit \(code)")
             if let duration = model.duration {
-                Text(String(format: "%.0f ms", duration * 1_000)).font(UIParameters.detailFont).foregroundStyle(UIColors.muted)
+                Text(DurationFormat.string(duration)).font(UIParameters.detailFont).foregroundStyle(UIColors.muted)
             }
         } else {
             Label(settings.text(.ready), systemImage: "circle").font(UIParameters.detailFont).foregroundStyle(UIColors.muted)
@@ -313,8 +326,8 @@ private struct HistoryRow: View {
                     .font(UIParameters.codeFont).frame(maxWidth: .infinity, alignment: .leading)
                 Label("\(entry.exitCode)", systemImage: entry.exitCode == 0 ? "checkmark.circle" : "exclamationmark.circle")
                     .font(UIParameters.detailFont).foregroundStyle(entry.exitCode == 0 ? UIColors.muted : UIColors.error)
-                Text(String(format: "%.0f ms", entry.duration * 1_000))
-                    .font(UIParameters.detailFont).foregroundStyle(UIColors.muted).frame(width: 64, alignment: .trailing)
+                Text(DurationFormat.string(entry.duration))
+                    .font(UIParameters.detailFont).foregroundStyle(UIColors.muted).frame(width: 80, alignment: .trailing)
             }
             .lineLimit(1)
             .padding(.horizontal, 16)

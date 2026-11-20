@@ -12,7 +12,7 @@ final class CommandInputTests: XCTestCase {
 
     private func makeController(fieldMode: Bool = true, size: NSSize = NSSize(width: 400, height: 120)) -> CommandInputController {
         _ = NSApplication.shared
-        let controller = CommandInputController(inset: NSSize(width: 0, height: UIParameters.commandFieldInset), identifier: "launcher.command")
+        let controller = CommandInputController(inset: .zero, identifier: "launcher.command")
         controller.returnRuns = fieldMode
         controller.scrollView.frame = NSRect(origin: .zero, size: size)
         let window = NSWindow(contentRect: controller.scrollView.frame, styleMask: .borderless, backing: .buffered, defer: false)
@@ -110,7 +110,7 @@ final class CommandInputTests: XCTestCase {
 
     func testContentHeightFollowsTheNumberOfDisplayedLines() {
         let controller = makeController()
-        let inset = UIParameters.commandFieldInset * 2
+        let inset: CGFloat = 0
         controller.apply(text: "", isEditable: true)
         XCTAssertEqual(controller.contentHeight, UIParameters.codeLineHeight + inset)
         controller.apply(text: "one", isEditable: true)
@@ -159,6 +159,15 @@ final class OutputTextTests: XCTestCase {
         range.map { "output line \($0)\n" }.joined()
     }
 
+    /// The published state is updated on a later main-queue turn.
+    private func waitUntil(_ condition: () -> Bool) -> Bool {
+        let deadline = Date().addingTimeInterval(2)
+        while !condition() && Date() < deadline {
+            RunLoop.main.run(until: Date().addingTimeInterval(0.01))
+        }
+        return condition()
+    }
+
     private func scrollToTop(_ controller: OutputTextController) {
         controller.scrollView.contentView.scroll(to: .zero)
         controller.scrollView.reflectScrolledClipView(controller.scrollView.contentView)
@@ -201,14 +210,12 @@ final class OutputTextTests: XCTestCase {
         controller.render(buffer)
         XCTAssertEqual(controller.scrollView.contentView.bounds.origin.y, 0, "new output must not move a reader who scrolled away")
         XCTAssertFalse(controller.isAtEnd)
-        RunLoop.main.run(until: Date().addingTimeInterval(0.05))
-        XCTAssertFalse(state.isFollowing)
+        XCTAssertTrue(waitUntil { !state.isFollowing })
 
         state.jumpToLatest()
         XCTAssertTrue(controller.isFollowing)
         XCTAssertTrue(controller.isAtEnd)
-        RunLoop.main.run(until: Date().addingTimeInterval(0.05))
-        XCTAssertTrue(state.isFollowing)
+        XCTAssertTrue(waitUntil { state.isFollowing })
     }
 
     func testScrollingBackToTheEndResumesFollowing() {

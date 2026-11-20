@@ -92,4 +92,53 @@ final class ExecutionTests: XCTestCase {
             XCTAssertNil(model.exitCode)
         }
     }
+
+    func testCompactOutputPaneOpensOnlyWhenThereIsOutput() {
+        withFixture { model, _ in
+            XCTAssertFalse(model.showsCompactOutput)
+
+            model.command = ":"
+            model.execute()
+            waitForExit(model)
+            XCTAssertFalse(model.showsCompactOutput, "a command without output must not open the pane")
+
+            model.exitCode = nil
+            model.command = "echo visible"
+            model.execute()
+            waitForExit(model)
+            XCTAssertTrue(model.showsCompactOutput)
+
+            model.isSplitView = true
+            XCTAssertFalse(model.showsCompactOutput)
+            model.isSplitView = false
+            model.isHistoryVisible = true
+            XCTAssertFalse(model.showsCompactOutput)
+        }
+    }
+
+    func testPartialOutputCanBeCopiedWhileTheCommandRuns() {
+        withFixture { model, pasteboard in
+            model.settings.copyOutputAfterRun = false
+            model.command = "echo progress; sleep 30"
+            model.execute()
+            waitForOutput(model, containing: "progress")
+            XCTAssertTrue(model.isRunning)
+
+            model.copyOutput()
+            XCTAssertEqual(pasteboard.string(forType: .string), "progress\n")
+
+            model.cancelExecution()
+            waitForExit(model, timeout: 3)
+        }
+    }
+
+    func testCommandFieldHeightFollowsTheMeasuredTextInCompactLayout() {
+        withFixture { model, _ in
+            let line = UIParameters.codeLineHeight
+            model.commandContentHeight = line * 3
+            XCTAssertEqual(model.commandFieldHeight, line * 3)
+            model.isSplitView = true
+            XCTAssertEqual(model.commandFieldHeight, line)
+        }
+    }
 }

@@ -72,7 +72,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     func presentLauncher(prepareClipboard: Bool = true) -> NSPanel {
         let panel = launcherPanel ?? makeLauncherPanel()
         launcherPanel = panel
-        resizeLauncher(split: model.isSplitView, animated: false)
+        resizeLauncher(animated: false)
         positionLauncher(panel)
 
         NSApp.activate(ignoringOtherApps: true)
@@ -80,7 +80,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
 
         if prepareClipboard {
             model.prepareForPresentation()
-            resizeLauncher(split: model.isSplitView, animated: false)
+            resizeLauncher(animated: false)
         }
         DispatchQueue.main.async {
             NotificationCenter.default.post(name: .miniTerminalFocusCommand, object: nil)
@@ -189,13 +189,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
             historyStore: model.historyStore,
             onClose: { [weak self] in self?.hideLauncher() },
             onOpenSettings: { [weak self] in self?.showSettings() },
-            onSplitChanged: { [weak self] split in
-                self?.resizeLauncher(split: split, animated: true)
-            },
-            onExecutionStateChanged: { [weak self] in
-                guard let self else { return }
-                self.resizeLauncher(split: self.model.isSplitView, animated: true)
-            }
+            onLayoutChanged: { [weak self] in self?.resizeLauncher(animated: true) }
         )
 
         panel.contentView = NSHostingView(rootView: rootView)
@@ -224,10 +218,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     func windowWillClose(_ notification: Notification) { shortcutCapture.stop() }
     func windowDidResignKey(_ notification: Notification) { shortcutCapture.stop() }
 
-    private func resizeLauncher(split: Bool, animated: Bool) {
+    private func launcherSize(available: CGSize?) -> CGSize {
+        UIParameters.launcherSize(split: model.isSplitView, history: model.isHistoryVisible,
+                                  showsOutput: model.showsCompactOutput,
+                                  commandFieldHeight: model.commandFieldHeight, available: available)
+    }
+
+    private func resizeLauncher(animated: Bool) {
         guard let panel = launcherPanel else { return }
         let visible = (panel.screen ?? NSScreen.main)?.visibleFrame
-        let targetSize = UIParameters.launcherSize(split: split, history: model.isHistoryVisible, available: visible?.size)
+        let targetSize = launcherSize(available: visible?.size)
+        guard targetSize != panel.frame.size else { return }
         var frame = panel.frame
         let top = frame.maxY
         let center = frame.midX
@@ -255,7 +256,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         }
 
         var frame = panel.frame
-        frame.size = UIParameters.launcherSize(split: model.isSplitView, history: model.isHistoryVisible, available: visibleFrame.size)
+        frame.size = launcherSize(available: visibleFrame.size)
         frame.origin.x = visibleFrame.midX - frame.width / 2
         frame.origin.y = max(visibleFrame.minY + 16, visibleFrame.maxY - frame.height - 112)
         panel.setFrame(frame, display: false)

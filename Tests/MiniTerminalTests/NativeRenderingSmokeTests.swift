@@ -33,6 +33,27 @@ final class NativeRenderingSmokeTests: XCTestCase {
                 model.command = "sleep 1"
                 model.isRunning = true
             }
+            try renderLauncher(name: "compact-output-\(appearanceName)", appearance: appearance, directory: outputDirectory, rendered: &rendered) { model, _ in
+                model.command = "ls -la"
+                model.output = (1...30).map { "-rw-r--r--  1 fixture  staff  \($0 * 512)  Nov 20 10:\($0 + 10) fixture-file-\($0).txt" }.joined(separator: "\n")
+                model.exitCode = 0
+                model.duration = 0.018
+            }
+            try renderLauncher(name: "compact-multiline-running-\(appearanceName)", appearance: appearance, directory: outputDirectory, rendered: &rendered) { model, _ in
+                model.command = "for i in $(seq 1 20); do\n  printf '\\rframe=%d' $i\n  sleep 0.3\ndone"
+                model.commandContentHeight = UIParameters.codeLineHeight * 4
+                var progress = OutputBuffer()
+                progress.append("Stream #0:0: Video: hevc\nframe=   1 fps=0.0\rframe= 412 fps= 58 q=-0.0 size=    2048KiB time=00:00:13.73 bitrate=1221.5kbits/s speed=1.93x")
+                model.output = progress.text
+                model.isRunning = true
+                model.runStartedAt = Date().addingTimeInterval(-75)
+            }
+            try renderLauncher(name: "compact-stopped-\(appearanceName)", appearance: appearance, directory: outputDirectory, rendered: &rendered) { model, _ in
+                model.command = "sleep 600"
+                model.exitCode = 130
+                model.wasCancelled = true
+                model.duration = 754.2
+            }
             try renderLauncher(name: "compact-copy-feedback-\(appearanceName)", appearance: appearance, directory: outputDirectory, rendered: &rendered) { model, _ in
                 model.command = "printf 'fixture copied'"
                 model.copyFeedback = "Fixture copied"
@@ -85,9 +106,11 @@ final class NativeRenderingSmokeTests: XCTestCase {
             model: model,
             settings: settings,
             historyStore: history,
-            onClose: {}, onOpenSettings: {}, onSplitChanged: { _ in }, onExecutionStateChanged: {}
+            onClose: {}, onOpenSettings: {}, onLayoutChanged: {}
         )
-        let normalSize = UIParameters.launcherSize(split: model.isSplitView, history: model.isHistoryVisible)
+        let normalSize = UIParameters.launcherSize(split: model.isSplitView, history: model.isHistoryVisible,
+                                                   showsOutput: model.showsCompactOutput,
+                                                   commandFieldHeight: model.commandFieldHeight)
         try render(view.environment(\.colorScheme, appearance), size: normalSize, name: name, directory: directory)
         rendered.append(name)
         if name.hasPrefix("compact-copy") || name.hasPrefix("split-") {

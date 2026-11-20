@@ -10,10 +10,18 @@ final class AppModel: ObservableObject {
     @Published var duration: TimeInterval?
     @Published var wasCancelled = false
     @Published var runStartedAt: Date?
+    /// Height the command text needs in the compact field, as measured by the field.
+    @Published var commandContentHeight = UIParameters.codeLineHeight
     @Published var showDangerousAlert = false
     @Published var isHistoryVisible = false
     @Published var copyFeedback: String?
     private(set) var completedCommand: String?
+
+    /// In the compact layout the output pane opens only once there is something to read.
+    var showsCompactOutput: Bool { !isSplitView && !isHistoryVisible && !outputBuffer.isEmpty }
+    var commandFieldHeight: CGFloat {
+        UIParameters.commandFieldHeight(contentHeight: commandContentHeight, split: isSplitView)
+    }
 
     var output: String {
         get { outputBuffer.text }

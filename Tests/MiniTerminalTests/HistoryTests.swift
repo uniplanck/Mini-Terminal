@@ -134,4 +134,28 @@ final class HistoryTests: XCTestCase {
         XCTAssertEqual(model.output, "current output")
         XCTAssertTrue(model.isRunning)
     }
+
+    func testStoredOutputIsBoundedAndKeepsTheEnd() {
+        let short = "short output"
+        XCTAssertEqual(HistoryStore.boundedOutput(short), short)
+
+        let long = (1...5_000).map { "line \($0) 進捗" }.joined(separator: "\n")
+        let bounded = HistoryStore.boundedOutput(long)
+        XCTAssertTrue(bounded.hasPrefix(HistoryStore.omissionMarker + "line "))
+        XCTAssertTrue(bounded.hasSuffix("line 5000 進捗"))
+        XCTAssertLessThanOrEqual(bounded.utf8.count, HistoryStore.maximumStoredOutput + HistoryStore.omissionMarker.utf8.count)
+
+        let unbroken = String(repeating: "進", count: 20_000)
+        let boundedUnbroken = HistoryStore.boundedOutput(unbroken)
+        XCTAssertTrue(boundedUnbroken.hasSuffix("進進進"))
+        XCTAssertFalse(boundedUnbroken.contains("\u{FFFD}"), "a multi-byte character must not be cut in half")
+
+        let suiteName = "MiniTerminalTests.HistoryBound.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suiteName)!
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+        let store = HistoryStore(defaults: defaults)
+        store.add(command: "seq 1 5000", output: long, exitCode: 0, duration: 0.1)
+        XCTAssertEqual(store.entries.first?.output, bounded)
+        XCTAssertEqual(HistoryStore(defaults: defaults).entries.first?.output, bounded)
+    }
 }
