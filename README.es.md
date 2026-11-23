@@ -11,6 +11,7 @@ Un lanzador Shell nativo y ligero para macOS, pensado para ejecutar comandos cor
 - Panel flotante tipo Spotlight
 - Pegado, ejecución y copia de salida desde el portapapeles, todos opcionales
 - Vista INPUT / OUTPUT
+- Salida en directo durante la ejecución; detener con el botón, `⌃C` o `⌘.`
 - Historial local de hasta 100 ejecuciones y navegación con ↑ / ↓
 - exit code y duración
 - Shell y directorio de trabajo configurables
@@ -32,4 +33,4 @@ Requiere macOS 14 o posterior y Xcode / Swift toolchain.
 
 La detección de comandos peligrosos es heurística, no un sandbox. Revisa cualquier comando copiado desde una fuente que no sea de confianza antes de ejecutarlo.
 
-Versión actual: **0.3.0**.
+Versión actual: **0.5.0**.

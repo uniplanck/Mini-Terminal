@@ -25,10 +25,13 @@ Press a global shortcut, type one shell command, run it, and get the result. Min
 - Optional clipboard auto-run on open
 - Optional automatic output copy
 - One-second copy confirmation feedback
-- Split INPUT / OUTPUT view
+- Live output while a command runs, including progress lines that redraw in place
+- Stop a running command with the stop button, `⌃C`, or `⌘.`
+- Output shown right under the command; split INPUT / OUTPUT view for longer scripts
+- Command field that grows with pasted multi-line commands
 - Persistent execution history, up to 100 entries
 - ↑ / ↓ command history recall
-- Exit code and execution duration
+- Exit code, elapsed time while running, and execution duration
 - Configurable shell path and working directory
 - Confirmation guard for potentially destructive or multi-line commands
 - System-language mode plus English, Japanese, Simplified Chinese, Traditional Chinese, Korean, Spanish, French, German, and Portuguese
@@ -139,6 +142,8 @@ dist/Mini-Terminal.app
 
 ## Current status
 
-Mini-Terminal is an early public build. The current local app version is **0.3.0**.
+Mini-Terminal is an early public build. The current local app version is **0.5.0**.
+
+Commands run without a terminal attached: interactive programs such as `vim`, `top`, or password prompts are not supported. Output on screen is limited to roughly the most recent 2 MB, and history keeps the last 20 KB of each output.
 
 The project currently focuses on one-command shell execution, clipboard automation, command history, localization, and low-friction native macOS interaction.

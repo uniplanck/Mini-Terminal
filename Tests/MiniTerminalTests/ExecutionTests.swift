@@ -1,0 +1,144 @@
+import AppKit
+import Combine
+import XCTest
+@testable import MiniTerminal
+
+final class ExecutionTests: XCTestCase {
+    private func withFixture(_ body: (AppModel, NSPasteboard) -> Void) {
+        let suite = "MiniTerminalTests.Execution.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suite)!
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let settings = SettingsStore(defaults: defaults)
+        settings.language = .en
+        settings.shellPath = "/bin/zsh"
+        settings.workingDirectory = "/tmp"
+        let pasteboard = NSPasteboard(name: .init(suite))
+        pasteboard.clearContents()
+        body(AppModel(settings: settings, historyStore: HistoryStore(defaults: defaults), pasteboard: pasteboard), pasteboard)
+        pasteboard.releaseGlobally()
+    }
+
+    private func waitForExit(_ model: AppModel, timeout: TimeInterval = 5) {
+        let finished = expectation(description: "command finishes")
+        let subscription = model.$exitCode.compactMap { $0 }.first().sink { _ in finished.fulfill() }
+        wait(for: [finished], timeout: timeout)
+        withExtendedLifetime(subscription) {}
+    }
+
+    private func waitForOutput(_ model: AppModel, containing text: String, timeout: TimeInterval = 3) {
+        let seen = expectation(description: "output contains \(text)")
+        let subscription = model.$outputBuffer.filter { $0.text.contains(text) }.first().sink { _ in seen.fulfill() }
+        wait(for: [seen], timeout: timeout)
+        withExtendedLifetime(subscription) {}
+    }
+
+    func testOutputReachesTheModelBeforeTheCommandEnds() {
+        withFixture { model, _ in
+            model.command = "printf 'frame=1\\r'; sleep 0.2; printf 'frame=2\\r'; sleep 1; echo; echo finished"
+            model.execute()
+            waitForOutput(model, containing: "frame=2")
+            XCTAssertTrue(model.isRunning)
+            XCTAssertNil(model.exitCode)
+            XCTAssertEqual(model.output, "frame=2")
+            waitForExit(model)
+            XCTAssertEqual(model.output, "frame=2\nfinished")
+            XCTAssertEqual(model.historyStore.entries.first?.output, "frame=2\nfinished")
+        }
+    }
+
+    func testFloodOfOutputStaysWithinTheDisplayLimit() {
+        withFixture { model, pasteboard in
+            model.command = "yes 'mini-terminal flood line' | head -c 6000000"
+            model.execute()
+            waitForExit(model, timeout: 30)
+            XCTAssertEqual(model.exitCode, 0)
+            XCTAssertTrue(model.outputBuffer.isTruncated)
+            XCTAssertLessThanOrEqual(model.output.utf8.count, OutputBuffer.defaultLimit)
+            XCTAssertTrue(model.output.hasPrefix("mini-terminal flood line\n"))
+            XCTAssertEqual(pasteboard.string(forType: .string), model.output)
+        }
+    }
+
+    func testStoppedCommandIsRecordedButNotCopied() {
+        withFixture { model, pasteboard in
+            pasteboard.setString("keep me", forType: .string)
+            model.command = "echo partial; sleep 30"
+            model.execute()
+            waitForOutput(model, containing: "partial")
+            XCTAssertNotNil(model.runStartedAt)
+
+            model.cancelExecution()
+            waitForExit(model, timeout: 3)
+            XCTAssertFalse(model.isRunning)
+            XCTAssertTrue(model.wasCancelled)
+            XCTAssertNil(model.runStartedAt)
+            XCTAssertEqual(model.output, "partial")
+            XCTAssertEqual(model.historyStore.entries.first?.command, "echo partial; sleep 30")
+            XCTAssertEqual(pasteboard.string(forType: .string), "keep me")
+
+            model.command = "echo next"
+            model.execute()
+            waitForExit(model)
+            XCTAssertFalse(model.wasCancelled)
+            XCTAssertEqual(pasteboard.string(forType: .string), "next")
+        }
+    }
+
+    func testCancelWithoutARunningCommandDoesNothing() {
+        withFixture { model, _ in
+            model.cancelExecution()
+            model.terminateExecution()
+            XCTAssertFalse(model.isRunning)
+            XCTAssertNil(model.exitCode)
+        }
+    }
+
+    func testCompactOutputPaneOpensOnlyWhenThereIsOutput() {
+        withFixture { model, _ in
+            XCTAssertFalse(model.showsCompactOutput)
+
+            model.command = ":"
+            model.execute()
+            waitForExit(model)
+            XCTAssertFalse(model.showsCompactOutput, "a command without output must not open the pane")
+
+            model.exitCode = nil
+            model.command = "echo visible"
+            model.execute()
+            waitForExit(model)
+            XCTAssertTrue(model.showsCompactOutput)
+
+            model.isSplitView = true
+            XCTAssertFalse(model.showsCompactOutput)
+            model.isSplitView = false
+            model.isHistoryVisible = true
+            XCTAssertFalse(model.showsCompactOutput)
+        }
+    }
+
+    func testPartialOutputCanBeCopiedWhileTheCommandRuns() {
+        withFixture { model, pasteboard in
+            model.settings.copyOutputAfterRun = false
+            model.command = "echo progress; sleep 30"
+            model.execute()
+            waitForOutput(model, containing: "progress")
+            XCTAssertTrue(model.isRunning)
+
+            model.copyOutput()
+            XCTAssertEqual(pasteboard.string(forType: .string), "progress\n")
+
+            model.cancelExecution()
+            waitForExit(model, timeout: 3)
+        }
+    }
+
+    func testCommandFieldHeightFollowsTheMeasuredTextInCompactLayout() {
+        withFixture { model, _ in
+            let line = UIParameters.codeLineHeight
+            model.commandContentHeight = line * 3
+            XCTAssertEqual(model.commandFieldHeight, line * 3)
+            model.isSplitView = true
+            XCTAssertEqual(model.commandFieldHeight, line)
+        }
+    }
+}

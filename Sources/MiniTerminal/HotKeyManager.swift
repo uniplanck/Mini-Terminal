@@ -3,6 +3,7 @@ import Carbon
 
 final class HotKeyManager {
     var onHotKey: (() -> Void)?
+    private(set) var registeredShortcut: Shortcut?
 
     private var hotKeyRef: EventHotKeyRef?
     private var eventHandlerRef: EventHandlerRef?
@@ -23,21 +24,23 @@ final class HotKeyManager {
 
     @discardableResult
     func register(_ shortcut: Shortcut) -> Bool {
-        if let hotKeyRef {
-            UnregisterEventHotKey(hotKeyRef)
-            self.hotKeyRef = nil
-        }
-
+        if registeredShortcut == shortcut { return true }
+        var replacement: EventHotKeyRef?
         let status = RegisterEventHotKey(
             shortcut.keyCode,
             carbonModifiers(from: shortcut.modifierFlags),
             hotKeyID,
             GetApplicationEventTarget(),
             0,
-            &hotKeyRef
+            &replacement
         )
 
-        return status == noErr
+        guard status == noErr, let replacement else { return false }
+
+        if let hotKeyRef { UnregisterEventHotKey(hotKeyRef) }
+        hotKeyRef = replacement
+        registeredShortcut = shortcut
+        return true
     }
 
     private func installHandler() {

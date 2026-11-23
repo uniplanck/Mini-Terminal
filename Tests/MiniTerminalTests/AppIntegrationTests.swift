@@ -29,12 +29,14 @@ final class AppIntegrationTests: XCTestCase {
         settings.shellPath = "/bin/zsh"
         settings.workingDirectory = "~"
 
+        let pasteboard = NSPasteboard(name: NSPasteboard.Name("MiniTerminalTests.AutoRun.\(UUID().uuidString)"))
         let model = AppModel(
             settings: settings,
-            historyStore: HistoryStore(defaults: defaults)
+            historyStore: HistoryStore(defaults: defaults),
+            pasteboard: pasteboard
         )
-        NSPasteboard.general.clearContents()
-        NSPasteboard.general.setString("printf 'auto-output'", forType: .string)
+        pasteboard.clearContents()
+        pasteboard.setString("printf 'auto-output'", forType: .string)
 
         let finished = expectation(description: "auto-run completes")
         var cancellable: AnyCancellable?
@@ -43,7 +45,7 @@ final class AppIntegrationTests: XCTestCase {
             .sink { code in
                 XCTAssertEqual(code, 0)
                 XCTAssertEqual(model.output, "auto-output")
-                XCTAssertEqual(NSPasteboard.general.string(forType: .string), "auto-output")
+                XCTAssertEqual(pasteboard.string(forType: .string), "auto-output")
                 finished.fulfill()
             }
 
@@ -61,18 +63,20 @@ final class AppIntegrationTests: XCTestCase {
         settings.pasteClipboardOnOpen = true
         settings.autoRunAfterPaste = false
 
+        let pasteboard = NSPasteboard(name: NSPasteboard.Name("MiniTerminalTests.Paste.\(UUID().uuidString)"))
         let model = AppModel(
             settings: settings,
-            historyStore: HistoryStore(defaults: defaults)
+            historyStore: HistoryStore(defaults: defaults),
+            pasteboard: pasteboard
         )
-        NSPasteboard.general.clearContents()
-        NSPasteboard.general.setString("echo clipboard", forType: .string)
+        pasteboard.clearContents()
+        pasteboard.setString("echo clipboard", forType: .string)
 
         model.prepareForPresentation()
         XCTAssertEqual(model.command, "echo clipboard")
 
         model.command = "pwd"
         model.copyInput()
-        XCTAssertEqual(NSPasteboard.general.string(forType: .string), "pwd")
+        XCTAssertEqual(pasteboard.string(forType: .string), "pwd")
     }
 }
