@@ -1,6 +1,8 @@
-# Mini-Terminal
+# Spot Terminal
 
 <p align="center"><a href="README.md">English</a> · <a href="README.ja.md">日本語</a> · <a href="README.zh-Hans.md">简体中文</a> · <strong>繁體中文</strong> · <a href="README.ko.md">한국어</a> · <a href="README.es.md">Español</a> · <a href="README.fr.md">Français</a> · <a href="README.de.md">Deutsch</a> · <a href="README.pt.md">Português</a></p>
+
+原名 Mini-Terminal。現有設定與歷史記錄會保留。
 
 一個輕量、原生的 macOS Shell 命令啟動器。按下全域快速鍵，輸入一條命令並執行；也能在開啟時自動貼上剪貼簿、立即執行，再把輸出複製回剪貼簿。
 
@@ -21,10 +23,10 @@
 ## 安裝
 
 ```bash
-git clone https://github.com/uniplanck/Mini-Terminal.git
-cd Mini-Terminal
+git clone https://github.com/uniplanck/Spot-Terminal
+cd Spot-Terminal
 bash scripts/build-app.sh
-open dist/Mini-Terminal.app
+open dist/Spot-Terminal.app
 ```
 
 需要 macOS 14 以上與 Xcode / Swift toolchain。
@@ -42,4 +44,4 @@ swift test
 bash scripts/build-app.sh
 ```
 
-目前版本：**0.5.0**。
+目前版本：**0.5.1**。

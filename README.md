@@ -1,4 +1,4 @@
-# Mini-Terminal
+# Spot Terminal
 
 <p align="center">
   <strong>English</strong> ·
@@ -12,9 +12,11 @@
   <a href="README.pt.md">Português</a>
 </p>
 
+Formerly Mini-Terminal. Your settings and history carry over.
+
 A lightweight, native macOS command launcher for the moments when opening a full Terminal window is overkill.
 
-Press a global shortcut, type one shell command, run it, and get the result. Mini-Terminal can also paste the current clipboard automatically, execute it immediately, and copy the output back to the clipboard.
+Press a global shortcut, type one shell command, run it, and get the result. Spot Terminal can also paste the current clipboard automatically, execute it immediately, and copy the output back to the clipboard.
 
 ## What it does
 
@@ -41,10 +43,10 @@ Press a global shortcut, type one shell command, run it, and get the result. Min
 Requirements: macOS 14 or later, Xcode / Swift toolchain.
 
 ```bash
-git clone https://github.com/uniplanck/Mini-Terminal.git
-cd Mini-Terminal
+git clone https://github.com/uniplanck/Spot-Terminal
+cd Spot-Terminal
 bash scripts/build-app.sh
-open dist/Mini-Terminal.app
+open dist/Spot-Terminal.app
 ```
 
 The default shortcut is:
@@ -60,7 +62,7 @@ You can change it in Settings.
 ```text
 Copy a command
       ↓
-Press the Mini-Terminal shortcut
+Press the Spot Terminal shortcut
       ↓
 Paste automatically (optional)
       ↓
@@ -82,7 +84,7 @@ Every completed command is stored locally in a rolling history of up to 100 entr
 
 ## Languages
 
-The default language mode is **System**. Mini-Terminal checks the preferred languages configured in macOS and uses the first supported language. If none match, it falls back to English.
+The default language mode is **System**. Spot Terminal checks the preferred languages configured in macOS and uses the first supported language. If none match, it falls back to English.
 
 Supported UI languages:
 
@@ -102,15 +104,15 @@ The language can also be selected manually in Settings.
 
 Clipboard auto-run is powerful and should be treated accordingly.
 
-Mini-Terminal detects several risky patterns such as `rm`, `sudo`, `git reset --hard`, recursive permission changes, and multi-line commands, then asks for confirmation before execution when the safety option is enabled.
+Spot Terminal detects several risky patterns such as `rm`, `sudo`, `git reset --hard`, recursive permission changes, and multi-line commands, then asks for confirmation before execution when the safety option is enabled.
 
 This guard is heuristic, not a sandbox. It cannot prove that a command is safe. Review commands you do not trust, especially commands copied from websites, chats, documentation, or generated text.
 
-Mini-Terminal itself keeps settings and history locally. Commands you run may access files, processes, or the network according to their own behavior and your macOS permissions.
+Spot Terminal itself keeps settings and history locally. Commands you run may access files, processes, or the network according to their own behavior and your macOS permissions.
 
 ## Why it opens quickly
 
-Mini-Terminal is designed as a resident menu-bar application. The process stays alive while the app is running, so the global shortcut does not cold-start the entire application every time. It only shows the existing floating panel.
+Spot Terminal is designed as a resident menu-bar application. The process stays alive while the app is running, so the global shortcut does not cold-start the entire application every time. It only shows the existing floating panel.
 
 That is the important distinction: this is not a smaller Terminal window. It is a fast launcher for short shell interactions.
 
@@ -119,7 +121,7 @@ That is the important distinction: this is not a smaller Terminal window. It is 
 Run directly:
 
 ```bash
-swift run Mini-Terminal
+swift run Spot-Terminal
 ```
 
 Run tests:
@@ -137,12 +139,12 @@ bash scripts/build-app.sh
 The generated app is:
 
 ```text
-dist/Mini-Terminal.app
+dist/Spot-Terminal.app
 ```
 
 ## Current status
 
-Mini-Terminal is an early public build. The current local app version is **0.5.0**.
+Spot Terminal is an early public build. The current local app version is **0.5.1**.
 
 Commands run without a terminal attached: interactive programs such as `vim`, `top`, or password prompts are not supported. Output on screen is limited to roughly the most recent 2 MB, and history keeps the last 20 KB of each output.
 

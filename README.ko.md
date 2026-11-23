@@ -1,6 +1,8 @@
-# Mini-Terminal
+# Spot Terminal
 
 <p align="center"><a href="README.md">English</a> · <a href="README.ja.md">日本語</a> · <a href="README.zh-Hans.md">简体中文</a> · <a href="README.zh-Hant.md">繁體中文</a> · <strong>한국어</strong> · <a href="README.es.md">Español</a> · <a href="README.fr.md">Français</a> · <a href="README.de.md">Deutsch</a> · <a href="README.pt.md">Português</a></p>
+
+이전 이름은 Mini-Terminal입니다. 설정과 기록은 그대로 유지됩니다.
 
 전체 Terminal 창을 열 필요가 없는 짧은 작업을 위한 가벼운 네이티브 macOS Shell 런처입니다. 전역 단축키로 열고 한 줄 명령을 실행하거나, 클립보드를 자동으로 붙여넣고 실행한 뒤 결과를 다시 복사할 수 있습니다.
 
@@ -21,10 +23,10 @@
 ## 설치
 
 ```bash
-git clone https://github.com/uniplanck/Mini-Terminal.git
-cd Mini-Terminal
+git clone https://github.com/uniplanck/Spot-Terminal
+cd Spot-Terminal
 bash scripts/build-app.sh
-open dist/Mini-Terminal.app
+open dist/Spot-Terminal.app
 ```
 
 macOS 14 이상과 Xcode / Swift toolchain이 필요합니다.
@@ -35,4 +37,4 @@ macOS 14 이상과 Xcode / Swift toolchain이 필요합니다.
 
 설정과 기록은 로컬에 저장됩니다. 실행한 명령 자체는 macOS 권한에 따라 파일, 프로세스, 네트워크에 접근할 수 있습니다.
 
-현재 버전: **0.5.0**.
+현재 버전: **0.5.1**.

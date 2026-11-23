@@ -22,8 +22,8 @@ final class ShellRunnerTests: XCTestCase {
     }
 
     func testCapturesStdoutAndExitCode() {
-        let (output, result) = run("printf 'mini-terminal'")
-        XCTAssertEqual(output, "mini-terminal")
+        let (output, result) = run("printf 'Spot Terminal'")
+        XCTAssertEqual(output, "Spot Terminal")
         XCTAssertEqual(result?.exitCode, 0)
         XCTAssertEqual(result?.wasCancelled, false)
     }
@@ -75,9 +75,9 @@ final class ShellRunnerTests: XCTestCase {
     }
 
     func testMissingShellReportsTheFailure() {
-        let (output, result) = run("true", shellPath: "/nonexistent/mini-terminal-shell")
+        let (output, result) = run("true", shellPath: "/nonexistent/Spot-Terminal-shell")
         XCTAssertEqual(result?.exitCode, -1)
-        XCTAssertTrue(output.contains("/nonexistent/mini-terminal-shell"))
+        XCTAssertTrue(output.contains("/nonexistent/Spot-Terminal-shell"))
     }
 
     func testSignalTerminationUsesShellExitCodeConvention() {

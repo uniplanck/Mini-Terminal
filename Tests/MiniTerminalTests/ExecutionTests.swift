@@ -48,13 +48,13 @@ final class ExecutionTests: XCTestCase {
 
     func testFloodOfOutputStaysWithinTheDisplayLimit() {
         withFixture { model, pasteboard in
-            model.command = "yes 'mini-terminal flood line' | head -c 6000000"
+            model.command = "yes 'Spot Terminal flood line' | head -c 6000000"
             model.execute()
             waitForExit(model, timeout: 30)
             XCTAssertEqual(model.exitCode, 0)
             XCTAssertTrue(model.outputBuffer.isTruncated)
             XCTAssertLessThanOrEqual(model.output.utf8.count, OutputBuffer.defaultLimit)
-            XCTAssertTrue(model.output.hasPrefix("mini-terminal flood line\n"))
+            XCTAssertTrue(model.output.hasPrefix("Spot Terminal flood line\n"))
             XCTAssertEqual(pasteboard.string(forType: .string), model.output)
         }
     }

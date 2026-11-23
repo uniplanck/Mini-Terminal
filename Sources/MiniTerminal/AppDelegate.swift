@@ -130,8 +130,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         }
 
         if let button = item.button {
-            button.image = NSImage(systemSymbolName: "terminal.fill", accessibilityDescription: "Mini-Terminal")
-            button.toolTip = "Mini-Terminal"
+            button.image = NSImage(systemSymbolName: "terminal.fill", accessibilityDescription: "Spot Terminal")
+            button.toolTip = "Spot Terminal"
         }
 
         let menu = NSMenu()
@@ -178,7 +178,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         panel.hasShadow = true
         panel.level = .floating
         panel.hidesOnDeactivate = !showOnLaunch
-        panel.title = "Mini-Terminal"
+        panel.title = "Spot Terminal"
         panel.isReleasedWhenClosed = false
         panel.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
         panel.isMovableByWindowBackground = true

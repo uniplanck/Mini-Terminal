@@ -1,6 +1,8 @@
-# Mini-Terminal
+# Spot Terminal
 
 <p align="center"><a href="README.md">English</a> · <a href="README.ja.md">日本語</a> · <a href="README.zh-Hans.md">简体中文</a> · <a href="README.zh-Hant.md">繁體中文</a> · <a href="README.ko.md">한국어</a> · <a href="README.es.md">Español</a> · <a href="README.fr.md">Français</a> · <a href="README.de.md">Deutsch</a> · <strong>Português</strong></p>
+
+Antes chamado Mini-Terminal. As configurações e o histórico são mantidos.
 
 Um lançador Shell nativo e leve para macOS, pensado para comandos rápidos que não justificam abrir uma janela completa do Terminal.
 
@@ -21,10 +23,10 @@ Um lançador Shell nativo e leve para macOS, pensado para comandos rápidos que 
 ## Instalação
 
 ```bash
-git clone https://github.com/uniplanck/Mini-Terminal.git
-cd Mini-Terminal
+git clone https://github.com/uniplanck/Spot-Terminal
+cd Spot-Terminal
 bash scripts/build-app.sh
-open dist/Mini-Terminal.app
+open dist/Spot-Terminal.app
 ```
 
 Requer macOS 14 ou posterior e Xcode / Swift toolchain.
@@ -33,4 +35,4 @@ Requer macOS 14 ou posterior e Xcode / Swift toolchain.
 
 A detecção de comandos de risco é heurística, não um sandbox. Revise comandos vindos de fontes não confiáveis antes de executá-los.
 
-Versão atual: **0.5.0**.
+Versão atual: **0.5.1**.

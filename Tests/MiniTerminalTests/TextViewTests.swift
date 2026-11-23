@@ -322,7 +322,7 @@ final class OutputFloodTests: XCTestCase {
         window.contentView = controller.scrollView
         defer { window.close() }
 
-        let chunk = String(repeating: "flood line for mini-terminal\n", count: 1_000_000 / 29)
+        let chunk = String(repeating: "flood line for Spot Terminal\n", count: 1_000_000 / 29)
         var buffer = OutputBuffer()
         var slowest: TimeInterval = 0
         var total: TimeInterval = 0
