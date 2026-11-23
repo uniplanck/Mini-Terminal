@@ -1,6 +1,8 @@
-# Mini-Terminal
+# Spot Terminal
 
 <p align="center"><a href="README.md">English</a> · <a href="README.ja.md">日本語</a> · <a href="README.zh-Hans.md">简体中文</a> · <a href="README.zh-Hant.md">繁體中文</a> · <a href="README.ko.md">한국어</a> · <a href="README.es.md">Español</a> · <strong>Français</strong> · <a href="README.de.md">Deutsch</a> · <a href="README.pt.md">Português</a></p>
+
+Anciennement Mini-Terminal. Les réglages et l’historique sont conservés.
 
 Un lanceur Shell natif et léger pour macOS, destiné aux commandes courtes qui ne justifient pas l’ouverture d’une fenêtre Terminal complète.
 
@@ -11,6 +13,7 @@ Un lanceur Shell natif et léger pour macOS, destiné aux commandes courtes qui 
 - Panneau flottant de style Spotlight
 - Collage, exécution et copie automatique via le presse-papiers
 - Vue INPUT / OUTPUT
+- Sortie en direct pendant l’exécution ; arrêt par le bouton, `⌃C` ou `⌘.`
 - Historique local jusqu’à 100 commandes et rappel avec ↑ / ↓
 - exit code et durée d’exécution
 - Shell et dossier de travail configurables
@@ -20,10 +23,10 @@ Un lanceur Shell natif et léger pour macOS, destiné aux commandes courtes qui 
 ## Installation
 
 ```bash
-git clone https://github.com/uniplanck/Mini-Terminal.git
-cd Mini-Terminal
+git clone https://github.com/uniplanck/Spot-Terminal
+cd Spot-Terminal
 bash scripts/build-app.sh
-open dist/Mini-Terminal.app
+open dist/Spot-Terminal.app
 ```
 
 Nécessite macOS 14 ou version ultérieure et Xcode / Swift toolchain.
@@ -32,4 +35,4 @@ Nécessite macOS 14 ou version ultérieure et Xcode / Swift toolchain.
 
 La détection des commandes à risque est heuristique et ne constitue pas un bac à sable. Vérifiez les commandes provenant d’une source non fiable avant de les exécuter.
 
-Version actuelle : **0.3.0**.
+Version actuelle : **0.5.1**.

@@ -2,12 +2,12 @@
 import PackageDescription
 
 let package = Package(
-    name: "Mini-Terminal",
+    name: "Spot-Terminal",
     platforms: [
         .macOS(.v14)
     ],
     products: [
-        .executable(name: "Mini-Terminal", targets: ["MiniTerminal"])
+        .executable(name: "Spot-Terminal", targets: ["MiniTerminal"])
     ],
     targets: [
         .executableTarget(

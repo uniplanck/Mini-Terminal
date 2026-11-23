@@ -14,6 +14,11 @@ final class HistoryStore: ObservableObject {
         static let entries = "executionHistory"
     }
 
+    /// Stored output per entry, in UTF-8 bytes. History is decoded at launch and
+    /// rewritten after every run, so it must stay small.
+    static let maximumStoredOutput = 20_000
+    static let omissionMarker = "[…]\n"
+
     private let defaults: UserDefaults
     private let maximumEntries: Int
 
@@ -36,7 +41,7 @@ final class HistoryStore: ObservableObject {
             id: UUID(),
             createdAt: Date(),
             command: command,
-            output: output,
+            output: Self.boundedOutput(output),
             exitCode: exitCode,
             duration: duration
         )
@@ -46,6 +51,19 @@ final class HistoryStore: ObservableObject {
             entries.removeLast(entries.count - maximumEntries)
         }
         persist()
+    }
+
+    /// Keeps the end of long output, where the result or the error usually is.
+    static func boundedOutput(_ output: String) -> String {
+        let utf8 = output.utf8
+        guard utf8.count > maximumStoredOutput else { return output }
+        var cut = utf8.index(utf8.startIndex, offsetBy: utf8.count - maximumStoredOutput)
+        if let newline = utf8[cut...].firstIndex(of: 0x0A), utf8.index(after: newline) != utf8.endIndex {
+            cut = utf8.index(after: newline)
+        } else {
+            while utf8[cut] & 0xC0 == 0x80 { cut = utf8.index(after: cut) }
+        }
+        return omissionMarker + String(output[cut...])
     }
 
     func clear() {

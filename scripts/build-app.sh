@@ -6,14 +6,16 @@ cd "$ROOT_DIR"
 
 swift build -c release
 BIN_DIR="$(swift build -c release --show-bin-path)"
-APP_DIR="$ROOT_DIR/dist/Mini-Terminal.app"
-CONTENTS_DIR="$APP_DIR/Contents"
+APP_DIR="$ROOT_DIR/dist/Spot-Terminal.app"
+mkdir -p "$ROOT_DIR/dist"
+STAGE_ROOT="$(mktemp -d "$ROOT_DIR/dist/.build-XXXXXX")"
+STAGED_APP="$STAGE_ROOT/Spot-Terminal.app"
+CONTENTS_DIR="$STAGED_APP/Contents"
 MACOS_DIR="$CONTENTS_DIR/MacOS"
 
-rm -rf "$APP_DIR"
 mkdir -p "$MACOS_DIR"
-cp "$BIN_DIR/Mini-Terminal" "$MACOS_DIR/Mini-Terminal"
-chmod +x "$MACOS_DIR/Mini-Terminal"
+cp "$BIN_DIR/Spot-Terminal" "$MACOS_DIR/Spot-Terminal"
+chmod +x "$MACOS_DIR/Spot-Terminal"
 
 cat > "$CONTENTS_DIR/Info.plist" <<'PLIST'
 <?xml version="1.0" encoding="UTF-8"?>
@@ -22,20 +24,23 @@ cat > "$CONTENTS_DIR/Info.plist" <<'PLIST'
 <dict>
     <key>CFBundleDevelopmentRegion</key>
     <string>en</string>
+    <key>CFBundleDisplayName</key>
+    <string>Spot Terminal</string>
     <key>CFBundleExecutable</key>
-    <string>Mini-Terminal</string>
+    <string>Spot-Terminal</string>
+    <!-- 互換のため旧識別子を維持 -->
     <key>CFBundleIdentifier</key>
     <string>com.nao.mini-terminal</string>
     <key>CFBundleInfoDictionaryVersion</key>
     <string>6.0</string>
     <key>CFBundleName</key>
-    <string>Mini-Terminal</string>
+    <string>Spot Terminal</string>
     <key>CFBundlePackageType</key>
     <string>APPL</string>
     <key>CFBundleShortVersionString</key>
-    <string>0.3.0</string>
+    <string>0.5.1</string>
     <key>CFBundleVersion</key>
-    <string>1</string>
+    <string>6</string>
     <key>LSMinimumSystemVersion</key>
     <string>14.0</string>
     <key>CFBundleLocalizations</key>
@@ -58,5 +63,23 @@ cat > "$CONTENTS_DIR/Info.plist" <<'PLIST'
 </plist>
 PLIST
 
-codesign --force --deep --sign - "$APP_DIR"
+# Verify the staged bundle before replacing the runnable app. Keep the previous
+# local bundle for rollback; this script never terminates a running process.
+SOURCE_REVISION="$(git rev-parse HEAD)"
+SOURCE_DIRTY=false
+if ! git diff --quiet HEAD -- Sources Package.swift scripts/build-app.sh ||
+   [ -n "$(git ls-files --others --exclude-standard -- Sources Package.swift scripts/build-app.sh)" ]; then
+    SOURCE_DIRTY=true
+fi
+/usr/libexec/PlistBuddy -c "Add :SpotTerminalSourceRevision string $SOURCE_REVISION" "$CONTENTS_DIR/Info.plist"
+/usr/libexec/PlistBuddy -c "Add :SpotTerminalSourceDirty bool $SOURCE_DIRTY" "$CONTENTS_DIR/Info.plist"
+plutil -lint "$CONTENTS_DIR/Info.plist"
+codesign --force --deep --sign - "$STAGED_APP"
+codesign --verify --deep --strict "$STAGED_APP"
+if [ -e "$APP_DIR" ]; then
+    BACKUP_ROOT="$(mktemp -d "$ROOT_DIR/dist/.previous-XXXXXX")"
+    mv "$APP_DIR" "$BACKUP_ROOT/Spot-Terminal.app"
+fi
+mv "$STAGED_APP" "$APP_DIR"
+rmdir "$STAGE_ROOT"
 echo "$APP_DIR"

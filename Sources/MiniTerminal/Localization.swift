@@ -62,7 +62,7 @@ enum AppLanguage: String, CaseIterable, Identifiable {
 }
 
 enum L10n {
-    enum Key: String {
+    enum Key: String, CaseIterable {
         case menuOpen
         case menuSettings
         case menuQuit
@@ -88,6 +88,8 @@ enum L10n {
 
         case shellSection
         case workingDirectory
+        case shellPathLabel
+        case workingDirectoryLabel
         case shellTildeHelp
 
         case executionConfirmTitle
@@ -104,12 +106,27 @@ enum L10n {
         case settings
         case historyEmpty
         case clearHistory
+        case clearHistoryConfirmTitle
+        case clearHistoryConfirmMessage
         case inputTitle
         case outputTitle
         case copyInput
         case copyOutput
         case copyBoth
         case running
+        case stop
+        case stopped
+        case keyboardStopHint
+        case wrapLines
+        case jumpToLatest
+        case outputTruncated
+        case ready
+        case completed
+        case executionFailed
+        case completedNoOutput
+        case keyboardRunHint
+        case enabled
+        case disabled
         case outputPlaceholder
 
         case copyInputFeedback
@@ -120,6 +137,10 @@ enum L10n {
     static func text(_ key: Key, language: AppLanguage) -> String {
         let resolved = language == .system ? AppLanguage.systemPreferred() : language
         return tables[resolved]?[key] ?? tables[.en]?[key] ?? key.rawValue
+    }
+
+    static func missingKeys(for language: AppLanguage) -> [Key] {
+        Key.allCases.filter { tables[language]?[$0] == nil }
     }
 
     static func historyCount(_ count: Int, language: AppLanguage) -> String {
@@ -146,15 +167,15 @@ enum L10n {
 
     private static let tables: [AppLanguage: [Key: String]] = [
         .en: [
-            .menuOpen: "Open Mini-Terminal",
+            .menuOpen: "Open Spot Terminal",
             .menuSettings: "Settings…",
             .menuQuit: "Quit",
-            .settingsTitle: "Mini-Terminal Settings",
+            .settingsTitle: "Spot Terminal Settings",
             .languageSection: "Language",
             .languageLabel: "App language",
             .languageSystemHelp: "System follows the first supported language in macOS. Unsupported languages fall back to English.",
             .shortcutSection: "Shortcut",
-            .shortcutOpen: "Open Mini-Terminal",
+            .shortcutOpen: "Open Spot Terminal",
             .shortcutWaiting: "Press keys…",
             .shortcutHelp: "Click the shortcut button, then press a shortcut with at least one modifier. Press Esc to cancel.",
             .clipboardSection: "Clipboard",
@@ -186,21 +207,27 @@ enum L10n {
             .copyOutput: "Copy output",
             .copyBoth: "Copy input + output",
             .running: "Running…",
+            .stop: "Stop", .stopped: "Stopped", .keyboardStopHint: "⌃C or ⌘. to stop",
+            .wrapLines: "Wrap long lines", .jumpToLatest: "Jump to latest output", .outputTruncated: "Earlier output omitted",
             .outputPlaceholder: "Command output appears here",
             .copyInputFeedback: "Input copied",
             .copyOutputFeedback: "Output copied",
-            .copyBothFeedback: "Input + output copied"
+            .copyBothFeedback: "Input + output copied",
+            .shellPathLabel: "Shell path", .workingDirectoryLabel: "Folder",
+            .clearHistoryConfirmTitle: "Clear execution history?", .clearHistoryConfirmMessage: "Saved commands and their results will be removed.",
+            .ready: "Ready", .completed: "Completed", .executionFailed: "Failed", .completedNoOutput: "Completed with no output",
+            .keyboardRunHint: "⌘ Return to run", .enabled: "On", .disabled: "Off"
         ],
         .ja: [
-            .menuOpen: "Mini-Terminalを開く",
+            .menuOpen: "Spot Terminal を開く",
             .menuSettings: "設定…",
             .menuQuit: "終了",
-            .settingsTitle: "Mini-Terminal 設定",
+            .settingsTitle: "Spot Terminal 設定",
             .languageSection: "言語",
             .languageLabel: "アプリの言語",
             .languageSystemHelp: "SystemではmacOSの優先言語に追従します。未対応の言語では英語を使用します。",
             .shortcutSection: "ショートカット",
-            .shortcutOpen: "Mini-Terminalを開く",
+            .shortcutOpen: "Spot Terminal を開く",
             .shortcutWaiting: "キー入力待ち…",
             .shortcutHelp: "ボタンを押してから、修飾キーを含むショートカットを入力します。Escでキャンセルできます。",
             .clipboardSection: "クリップボード",
@@ -232,21 +259,27 @@ enum L10n {
             .copyOutput: "出力をコピー",
             .copyBoth: "入出力をコピー",
             .running: "実行中…",
+            .stop: "停止", .stopped: "停止しました", .keyboardStopHint: "⌃C または ⌘. で停止",
+            .wrapLines: "長い行を折り返す", .jumpToLatest: "最新の出力へ", .outputTruncated: "古い出力を省略",
             .outputPlaceholder: "実行結果はここに表示されます",
             .copyInputFeedback: "入力をコピーしました",
             .copyOutputFeedback: "出力をコピーしました",
-            .copyBothFeedback: "入出力をコピーしました"
+            .copyBothFeedback: "入出力をコピーしました",
+            .shellPathLabel: "Shellのパス", .workingDirectoryLabel: "フォルダ",
+            .clearHistoryConfirmTitle: "実行履歴を消去しますか？", .clearHistoryConfirmMessage: "保存したコマンドと実行結果を削除します。",
+            .ready: "待機中", .completed: "完了", .executionFailed: "失敗", .completedNoOutput: "出力なしで完了しました",
+            .keyboardRunHint: "⌘ Returnで実行", .enabled: "オン", .disabled: "オフ"
         ],
         .zhHans: [
-            .menuOpen: "打开 Mini-Terminal",
+            .menuOpen: "打开 Spot Terminal",
             .menuSettings: "设置…",
             .menuQuit: "退出",
-            .settingsTitle: "Mini-Terminal 设置",
+            .settingsTitle: "Spot Terminal 设置",
             .languageSection: "语言",
             .languageLabel: "应用语言",
             .languageSystemHelp: "System 会跟随 macOS 中首个受支持的首选语言。不支持的语言将使用英语。",
             .shortcutSection: "快捷键",
-            .shortcutOpen: "打开 Mini-Terminal",
+            .shortcutOpen: "打开 Spot Terminal",
             .shortcutWaiting: "请按快捷键…",
             .shortcutHelp: "点击按钮后输入包含至少一个修饰键的快捷键。按 Esc 取消。",
             .clipboardSection: "剪贴板",
@@ -278,21 +311,27 @@ enum L10n {
             .copyOutput: "复制输出",
             .copyBoth: "复制输入和输出",
             .running: "运行中…",
+            .stop: "停止", .stopped: "已停止", .keyboardStopHint: "⌃C 或 ⌘. 停止",
+            .wrapLines: "长行自动换行", .jumpToLatest: "跳到最新输出", .outputTruncated: "已省略较早的输出",
             .outputPlaceholder: "命令输出将显示在这里",
             .copyInputFeedback: "已复制输入",
             .copyOutputFeedback: "已复制输出",
-            .copyBothFeedback: "已复制输入和输出"
+            .copyBothFeedback: "已复制输入和输出",
+            .shellPathLabel: "Shell 路径", .workingDirectoryLabel: "文件夹",
+            .clearHistoryConfirmTitle: "清除执行历史？", .clearHistoryConfirmMessage: "已保存的命令及其结果将被删除。",
+            .ready: "就绪", .completed: "已完成", .executionFailed: "失败", .completedNoOutput: "已完成，没有输出",
+            .keyboardRunHint: "⌘ Return 运行", .enabled: "开", .disabled: "关"
         ],
         .zhHant: [
-            .menuOpen: "開啟 Mini-Terminal",
+            .menuOpen: "開啟 Spot Terminal",
             .menuSettings: "設定…",
             .menuQuit: "結束",
-            .settingsTitle: "Mini-Terminal 設定",
+            .settingsTitle: "Spot Terminal 設定",
             .languageSection: "語言",
             .languageLabel: "App 語言",
             .languageSystemHelp: "System 會跟隨 macOS 中第一個支援的偏好語言。不支援的語言將使用英文。",
             .shortcutSection: "快速鍵",
-            .shortcutOpen: "開啟 Mini-Terminal",
+            .shortcutOpen: "開啟 Spot Terminal",
             .shortcutWaiting: "請按快速鍵…",
             .shortcutHelp: "按下按鈕後輸入至少包含一個修飾鍵的快速鍵。按 Esc 取消。",
             .clipboardSection: "剪貼簿",
@@ -324,21 +363,27 @@ enum L10n {
             .copyOutput: "複製輸出",
             .copyBoth: "複製輸入與輸出",
             .running: "執行中…",
+            .stop: "停止", .stopped: "已停止", .keyboardStopHint: "⌃C 或 ⌘. 停止",
+            .wrapLines: "長行自動換行", .jumpToLatest: "跳到最新輸出", .outputTruncated: "已省略較早的輸出",
             .outputPlaceholder: "命令輸出會顯示在這裡",
             .copyInputFeedback: "已複製輸入",
             .copyOutputFeedback: "已複製輸出",
-            .copyBothFeedback: "已複製輸入與輸出"
+            .copyBothFeedback: "已複製輸入與輸出",
+            .shellPathLabel: "Shell 路徑", .workingDirectoryLabel: "資料夾",
+            .clearHistoryConfirmTitle: "清除執行歷史？", .clearHistoryConfirmMessage: "已儲存的命令及其結果將會刪除。",
+            .ready: "就緒", .completed: "已完成", .executionFailed: "失敗", .completedNoOutput: "已完成，沒有輸出",
+            .keyboardRunHint: "⌘ Return 執行", .enabled: "開", .disabled: "關"
         ],
         .ko: [
-            .menuOpen: "Mini-Terminal 열기",
+            .menuOpen: "Spot Terminal 열기",
             .menuSettings: "설정…",
             .menuQuit: "종료",
-            .settingsTitle: "Mini-Terminal 설정",
+            .settingsTitle: "Spot Terminal 설정",
             .languageSection: "언어",
             .languageLabel: "앱 언어",
             .languageSystemHelp: "System은 macOS의 우선 언어 중 지원되는 첫 언어를 사용합니다. 지원하지 않는 언어는 영어로 표시됩니다.",
             .shortcutSection: "단축키",
-            .shortcutOpen: "Mini-Terminal 열기",
+            .shortcutOpen: "Spot Terminal 열기",
             .shortcutWaiting: "키 입력 대기…",
             .shortcutHelp: "버튼을 누른 뒤 하나 이상의 보조 키가 포함된 단축키를 입력하세요. Esc로 취소할 수 있습니다.",
             .clipboardSection: "클립보드",
@@ -370,21 +415,27 @@ enum L10n {
             .copyOutput: "출력 복사",
             .copyBoth: "입력 + 출력 복사",
             .running: "실행 중…",
+            .stop: "중지", .stopped: "중지됨", .keyboardStopHint: "⌃C 또는 ⌘. 로 중지",
+            .wrapLines: "긴 줄 바꿈", .jumpToLatest: "최신 출력으로 이동", .outputTruncated: "이전 출력 생략됨",
             .outputPlaceholder: "명령 출력이 여기에 표시됩니다",
             .copyInputFeedback: "입력을 복사했습니다",
             .copyOutputFeedback: "출력을 복사했습니다",
-            .copyBothFeedback: "입력과 출력을 복사했습니다"
+            .copyBothFeedback: "입력과 출력을 복사했습니다",
+            .shellPathLabel: "Shell 경로", .workingDirectoryLabel: "폴더",
+            .clearHistoryConfirmTitle: "실행 기록을 지울까요?", .clearHistoryConfirmMessage: "저장된 명령과 결과가 삭제됩니다.",
+            .ready: "준비됨", .completed: "완료", .executionFailed: "실패", .completedNoOutput: "출력 없이 완료됨",
+            .keyboardRunHint: "⌘ Return 실행", .enabled: "켜짐", .disabled: "꺼짐"
         ],
         .es: [
-            .menuOpen: "Abrir Mini-Terminal",
+            .menuOpen: "Abrir Spot Terminal",
             .menuSettings: "Ajustes…",
             .menuQuit: "Salir",
-            .settingsTitle: "Ajustes de Mini-Terminal",
+            .settingsTitle: "Ajustes de Spot Terminal",
             .languageSection: "Idioma",
             .languageLabel: "Idioma de la app",
             .languageSystemHelp: "System usa el primer idioma compatible de macOS. Los idiomas no compatibles usan inglés.",
             .shortcutSection: "Atajo",
-            .shortcutOpen: "Abrir Mini-Terminal",
+            .shortcutOpen: "Abrir Spot Terminal",
             .shortcutWaiting: "Pulsa las teclas…",
             .shortcutHelp: "Pulsa el botón y luego un atajo con al menos una tecla modificadora. Esc cancela.",
             .clipboardSection: "Portapapeles",
@@ -416,21 +467,27 @@ enum L10n {
             .copyOutput: "Copiar salida",
             .copyBoth: "Copiar entrada + salida",
             .running: "Ejecutando…",
+            .stop: "Detener", .stopped: "Detenido", .keyboardStopHint: "⌃C o ⌘. para detener",
+            .wrapLines: "Ajustar líneas largas", .jumpToLatest: "Ir a la salida más reciente", .outputTruncated: "Salida anterior omitida",
             .outputPlaceholder: "La salida del comando aparecerá aquí",
             .copyInputFeedback: "Entrada copiada",
             .copyOutputFeedback: "Salida copiada",
-            .copyBothFeedback: "Entrada y salida copiadas"
+            .copyBothFeedback: "Entrada y salida copiadas",
+            .shellPathLabel: "Ruta de Shell", .workingDirectoryLabel: "Carpeta",
+            .clearHistoryConfirmTitle: "¿Borrar el historial?", .clearHistoryConfirmMessage: "Se eliminarán los comandos y resultados guardados.",
+            .ready: "Listo", .completed: "Completado", .executionFailed: "Error", .completedNoOutput: "Completado sin salida",
+            .keyboardRunHint: "⌘ Return para ejecutar", .enabled: "Sí", .disabled: "No"
         ],
         .fr: [
-            .menuOpen: "Ouvrir Mini-Terminal",
+            .menuOpen: "Ouvrir Spot Terminal",
             .menuSettings: "Réglages…",
             .menuQuit: "Quitter",
-            .settingsTitle: "Réglages de Mini-Terminal",
+            .settingsTitle: "Réglages de Spot Terminal",
             .languageSection: "Langue",
             .languageLabel: "Langue de l’app",
             .languageSystemHelp: "System utilise la première langue macOS prise en charge. Les autres langues utilisent l’anglais.",
             .shortcutSection: "Raccourci",
-            .shortcutOpen: "Ouvrir Mini-Terminal",
+            .shortcutOpen: "Ouvrir Spot Terminal",
             .shortcutWaiting: "Appuyez sur les touches…",
             .shortcutHelp: "Cliquez sur le bouton puis saisissez un raccourci avec au moins une touche de modification. Esc annule.",
             .clipboardSection: "Presse-papiers",
@@ -462,21 +519,27 @@ enum L10n {
             .copyOutput: "Copier la sortie",
             .copyBoth: "Copier entrée + sortie",
             .running: "Exécution…",
+            .stop: "Arrêter", .stopped: "Arrêté", .keyboardStopHint: "⌃C ou ⌘. pour arrêter",
+            .wrapLines: "Renvoyer les lignes longues", .jumpToLatest: "Aller à la dernière sortie", .outputTruncated: "Début de la sortie omis",
             .outputPlaceholder: "La sortie de la commande apparaîtra ici",
             .copyInputFeedback: "Entrée copiée",
             .copyOutputFeedback: "Sortie copiée",
-            .copyBothFeedback: "Entrée et sortie copiées"
+            .copyBothFeedback: "Entrée et sortie copiées",
+            .shellPathLabel: "Chemin du Shell", .workingDirectoryLabel: "Dossier",
+            .clearHistoryConfirmTitle: "Effacer l’historique ?", .clearHistoryConfirmMessage: "Les commandes et résultats enregistrés seront supprimés.",
+            .ready: "Prêt", .completed: "Terminé", .executionFailed: "Échec", .completedNoOutput: "Terminé sans sortie",
+            .keyboardRunHint: "⌘ Retour pour exécuter", .enabled: "Oui", .disabled: "Non"
         ],
         .de: [
-            .menuOpen: "Mini-Terminal öffnen",
+            .menuOpen: "Spot Terminal öffnen",
             .menuSettings: "Einstellungen…",
             .menuQuit: "Beenden",
-            .settingsTitle: "Mini-Terminal Einstellungen",
+            .settingsTitle: "Spot Terminal Einstellungen",
             .languageSection: "Sprache",
             .languageLabel: "App-Sprache",
             .languageSystemHelp: "System verwendet die erste unterstützte macOS-Sprache. Nicht unterstützte Sprachen verwenden Englisch.",
             .shortcutSection: "Tastenkürzel",
-            .shortcutOpen: "Mini-Terminal öffnen",
+            .shortcutOpen: "Spot Terminal öffnen",
             .shortcutWaiting: "Tasten drücken…",
             .shortcutHelp: "Klicken Sie auf die Schaltfläche und drücken Sie ein Kürzel mit mindestens einer Sondertaste. Esc bricht ab.",
             .clipboardSection: "Zwischenablage",
@@ -508,21 +571,27 @@ enum L10n {
             .copyOutput: "Ausgabe kopieren",
             .copyBoth: "Eingabe + Ausgabe kopieren",
             .running: "Wird ausgeführt…",
+            .stop: "Stoppen", .stopped: "Gestoppt", .keyboardStopHint: "⌃C oder ⌘. zum Stoppen",
+            .wrapLines: "Lange Zeilen umbrechen", .jumpToLatest: "Zur neuesten Ausgabe", .outputTruncated: "Ältere Ausgabe ausgelassen",
             .outputPlaceholder: "Die Befehlsausgabe erscheint hier",
             .copyInputFeedback: "Eingabe kopiert",
             .copyOutputFeedback: "Ausgabe kopiert",
-            .copyBothFeedback: "Eingabe und Ausgabe kopiert"
+            .copyBothFeedback: "Eingabe und Ausgabe kopiert",
+            .shellPathLabel: "Shell-Pfad", .workingDirectoryLabel: "Ordner",
+            .clearHistoryConfirmTitle: "Ausführungsverlauf löschen?", .clearHistoryConfirmMessage: "Gespeicherte Befehle und Ergebnisse werden entfernt.",
+            .ready: "Bereit", .completed: "Abgeschlossen", .executionFailed: "Fehlgeschlagen", .completedNoOutput: "Ohne Ausgabe abgeschlossen",
+            .keyboardRunHint: "⌘ Eingabe zum Ausführen", .enabled: "Ein", .disabled: "Aus"
         ],
         .pt: [
-            .menuOpen: "Abrir Mini-Terminal",
+            .menuOpen: "Abrir Spot Terminal",
             .menuSettings: "Ajustes…",
             .menuQuit: "Sair",
-            .settingsTitle: "Ajustes do Mini-Terminal",
+            .settingsTitle: "Ajustes do Spot Terminal",
             .languageSection: "Idioma",
             .languageLabel: "Idioma do app",
             .languageSystemHelp: "System usa o primeiro idioma compatível do macOS. Idiomas não compatíveis usam inglês.",
             .shortcutSection: "Atalho",
-            .shortcutOpen: "Abrir Mini-Terminal",
+            .shortcutOpen: "Abrir Spot Terminal",
             .shortcutWaiting: "Pressione as teclas…",
             .shortcutHelp: "Clique no botão e pressione um atalho com pelo menos uma tecla modificadora. Esc cancela.",
             .clipboardSection: "Área de transferência",
@@ -554,10 +623,16 @@ enum L10n {
             .copyOutput: "Copiar saída",
             .copyBoth: "Copiar entrada + saída",
             .running: "Executando…",
+            .stop: "Parar", .stopped: "Interrompido", .keyboardStopHint: "⌃C ou ⌘. para parar",
+            .wrapLines: "Quebrar linhas longas", .jumpToLatest: "Ir para a saída mais recente", .outputTruncated: "Saída anterior omitida",
             .outputPlaceholder: "A saída do comando aparecerá aqui",
             .copyInputFeedback: "Entrada copiada",
             .copyOutputFeedback: "Saída copiada",
-            .copyBothFeedback: "Entrada e saída copiadas"
+            .copyBothFeedback: "Entrada e saída copiadas",
+            .shellPathLabel: "Caminho do Shell", .workingDirectoryLabel: "Pasta",
+            .clearHistoryConfirmTitle: "Limpar o histórico de execução?", .clearHistoryConfirmMessage: "Os comandos e resultados salvos serão removidos.",
+            .ready: "Pronto", .completed: "Concluído", .executionFailed: "Falha", .completedNoOutput: "Concluído sem saída",
+            .keyboardRunHint: "⌘ Return para executar", .enabled: "Ativado", .disabled: "Desativado"
         ]
     ]
 }
